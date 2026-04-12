@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Permission Check</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="page">
+      <section class="card" aria-labelledby="form-title">
+        <p class="eyebrow">Entry Form</p>
+        <h1 id="form-title">Permission Check</h1>
+        <p class="intro">Enter your full name and age, then click the permitted button.</p>
+
+        <form id="entry-form" class="entry-form">
+          <label class="field">
+            <span>Full Name</span>
+            <input
+              id="full-name"
+              name="fullName"
+              type="text"
+              placeholder="Enter your full name"
+              required
+            />
+          </label>
+
+          <label class="field">
+            <span>Age</span>
+            <input
+              id="age"
+              name="age"
+              type="number"
+              min="0"
+              placeholder="Enter your age"
+              required
+            />
+          </label>
+
+          <button id="permitted-button" type="submit">Permited Button</button>
+        </form>
+
+      </section>
+    </main>
+
+    <div id="dialog-backdrop" class="dialog-backdrop hidden" aria-hidden="true">
+      <div
+        class="dialog-box"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="dialog-title"
+        aria-describedby="dialog-message"
+      >
+        <h2 id="dialog-title">Permission Result</h2>
+        <p id="dialog-message"></p>
+        <button id="dialog-close" type="button">OK</button>
+      </div>
+    </div>
+
+    <script>
+      const form = document.getElementById("entry-form");
+      const ageInput = document.getElementById("age");
+      const dialogBackdrop = document.getElementById("dialog-backdrop");
+      const dialogMessage = document.getElementById("dialog-message");
+      const dialogClose = document.getElementById("dialog-close");
+
+      const showDialog = (message) => {
+        dialogMessage.textContent = message;
+        dialogBackdrop.classList.remove("hidden");
+        dialogBackdrop.setAttribute("aria-hidden", "false");
+      };
+
+      const hideDialog = () => {
+        dialogBackdrop.classList.add("hidden");
+        dialogBackdrop.setAttribute("aria-hidden", "true");
+      };
+
+      dialogClose.addEventListener("click", hideDialog);
+
+      dialogBackdrop.addEventListener("click", (event) => {
+        if (event.target === dialogBackdrop) {
+          hideDialog();
+        }
+      });
+
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+
+        const age = Number(ageInput.value);
+
+        let message = "";
+
+        if (Number.isNaN(age)) {
+          message = "Please enter a valid age.";
+          showDialog(message);
+          return;
+        }
+
+        if (age < 40) {
+          message = "You are good to enter";
+          showDialog(message);
+          return;
+        }
+
+        message = "Not allowed to Enter";
+        showDialog(message);
+      });
+    </script>
+  </body>
+</html>
