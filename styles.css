@@ -43,6 +43,8 @@ body {
 }
 
 .brand-lockup {
+  display: flex;
+  justify-content: center;
   margin-bottom: 22px;
   padding: 14px 16px 10px;
   border-radius: 16px;

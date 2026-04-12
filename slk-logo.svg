@@ -1,64 +1,59 @@
-<svg width="440" height="160" viewBox="0 0 440 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="440" height="160" fill="white"/>
+<svg width="420" height="120" viewBox="0 0 420 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="420" height="120" fill="white"/>
   <g fill="#42B7F3">
-    <circle cx="54" cy="34" r="4"/>
-    <circle cx="68" cy="28" r="4"/>
-    <circle cx="82" cy="24" r="4"/>
-    <circle cx="96" cy="22" r="4"/>
-    <circle cx="110" cy="22" r="4"/>
-    <circle cx="124" cy="24" r="4"/>
-    <circle cx="138" cy="28" r="3.5"/>
-    <circle cx="150" cy="34" r="3"/>
+    <circle cx="34" cy="24" r="4"/>
+    <circle cx="48" cy="18" r="4"/>
+    <circle cx="62" cy="14" r="4"/>
+    <circle cx="76" cy="12" r="4"/>
+    <circle cx="90" cy="12" r="4"/>
+    <circle cx="104" cy="14" r="4"/>
+    <circle cx="116" cy="18" r="3.5"/>
+    <circle cx="126" cy="24" r="3"/>
 
-    <circle cx="46" cy="48" r="4"/>
-    <circle cx="60" cy="42" r="4"/>
-    <circle cx="74" cy="38" r="4"/>
-    <circle cx="88" cy="36" r="4"/>
-    <circle cx="102" cy="36" r="4"/>
-    <circle cx="116" cy="38" r="4"/>
-    <circle cx="130" cy="42" r="3.5"/>
-    <circle cx="142" cy="48" r="3"/>
+    <circle cx="28" cy="38" r="4"/>
+    <circle cx="42" cy="32" r="4"/>
+    <circle cx="56" cy="28" r="4"/>
+    <circle cx="70" cy="26" r="4"/>
+    <circle cx="84" cy="26" r="4"/>
+    <circle cx="98" cy="28" r="4"/>
+    <circle cx="110" cy="32" r="3.5"/>
+    <circle cx="120" cy="38" r="3"/>
 
-    <circle cx="44" cy="64" r="4"/>
-    <circle cx="58" cy="58" r="4"/>
-    <circle cx="72" cy="54" r="4"/>
-    <circle cx="86" cy="52" r="4"/>
-    <circle cx="100" cy="52" r="4"/>
-    <circle cx="114" cy="54" r="3.5"/>
-    <circle cx="126" cy="58" r="3"/>
+    <circle cx="26" cy="54" r="4"/>
+    <circle cx="40" cy="48" r="4"/>
+    <circle cx="54" cy="44" r="4"/>
+    <circle cx="68" cy="42" r="4"/>
+    <circle cx="82" cy="42" r="4"/>
+    <circle cx="94" cy="44" r="3.5"/>
+    <circle cx="104" cy="48" r="3"/>
 
-    <circle cx="54" cy="78" r="4"/>
-    <circle cx="68" cy="74" r="4"/>
-    <circle cx="82" cy="72" r="4"/>
-    <circle cx="96" cy="72" r="3.5"/>
-    <circle cx="108" cy="74" r="3"/>
+    <circle cx="34" cy="68" r="4"/>
+    <circle cx="48" cy="64" r="4"/>
+    <circle cx="62" cy="62" r="4"/>
+    <circle cx="74" cy="62" r="3.5"/>
+    <circle cx="84" cy="64" r="3"/>
 
-    <circle cx="84" cy="88" r="4"/>
-    <circle cx="72" cy="92" r="4"/>
-    <circle cx="60" cy="98" r="4"/>
-    <circle cx="50" cy="106" r="3.5"/>
-    <circle cx="44" cy="116" r="3"/>
+    <circle cx="64" cy="78" r="4"/>
+    <circle cx="52" cy="84" r="4"/>
+    <circle cx="40" cy="90" r="4"/>
+    <circle cx="30" cy="98" r="3.5"/>
 
-    <circle cx="98" cy="90" r="4"/>
-    <circle cx="112" cy="94" r="4"/>
-    <circle cx="124" cy="100" r="3.5"/>
-    <circle cx="134" cy="108" r="3"/>
+    <circle cx="78" cy="80" r="4"/>
+    <circle cx="90" cy="84" r="4"/>
+    <circle cx="100" cy="90" r="3.5"/>
+    <circle cx="108" cy="98" r="3"/>
 
-    <circle cx="90" cy="102" r="4"/>
-    <circle cx="78" cy="108" r="4"/>
-    <circle cx="66" cy="114" r="3.5"/>
-    <circle cx="56" cy="122" r="3"/>
+    <circle cx="70" cy="92" r="4"/>
+    <circle cx="58" cy="98" r="4"/>
+    <circle cx="48" cy="104" r="3.5"/>
 
-    <circle cx="102" cy="108" r="4"/>
-    <circle cx="114" cy="114" r="3.5"/>
-    <circle cx="124" cy="122" r="3"/>
+    <circle cx="82" cy="96" r="4"/>
+    <circle cx="92" cy="102" r="3.5"/>
+    <circle cx="100" cy="108" r="3"/>
   </g>
 
-  <g fill="#42B7F3">
-    <path d="M182 61c8-16 25-24 49-24 17 0 31 3 43 9l-7 14c-10-5-23-8-37-8-14 0-23 3-27 9-2 3-2 6 1 8 3 3 8 4 16 4h16c15 0 27 3 35 10 9 8 11 18 6 29-8 18-27 27-57 27-19 0-36-4-49-11l8-15c12 6 26 10 42 10 15 0 25-3 30-10 2-4 2-7-1-10-3-3-8-4-16-4h-16c-16 0-28-3-36-10-9-7-11-17-6-29z"/>
-    <path d="M286 40h20l-16 86h-20l16-86z"/>
-    <path d="M324 40h20l-7 37 49-37h28l-56 42 41 44h-27l-34-36-8 6-6 30h-20l16-86z"/>
+  <g fill="#42B7F3" font-family="Arial, Helvetica, sans-serif">
+    <text x="150" y="68" font-size="58" font-style="italic" font-weight="700" letter-spacing="1">SLK</text>
+    <text x="152" y="88" font-size="16" letter-spacing="2">ACCELERATING GROWTH</text>
   </g>
-
-  <text x="182" y="102" fill="#42B7F3" font-family="Arial, Helvetica, sans-serif" font-size="22" letter-spacing="2">ACCELERATING GROWTH</text>
 </svg>
