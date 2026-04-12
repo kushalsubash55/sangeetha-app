@@ -42,6 +42,20 @@ body {
   box-shadow: 0 18px 40px rgba(44, 63, 88, 0.12);
 }
 
+.brand-lockup {
+  margin-bottom: 22px;
+  padding: 14px 16px 10px;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eff5ff, #f8fbff);
+  border: 1px solid #d8e3f8;
+}
+
+.brand-logo {
+  display: block;
+  width: min(100%, 260px);
+  height: auto;
+}
+
 .eyebrow {
   margin: 0 0 8px;
   color: var(--button);
