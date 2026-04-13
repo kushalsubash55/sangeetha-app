@@ -403,7 +403,7 @@ export default function TodaySummaryPlaceholderPage() {
                 openBills.map((bill) => (
                   <Link
                     key={bill.id}
-                    href={`/orders/search?bill=${encodeURIComponent(bill.bill_number)}`}
+                    href={`/summary/bill/${encodeURIComponent(bill.bill_number)}`}
                     className="block rounded-2xl border border-sand bg-cream px-4 py-4"
                   >
                     <p className="text-lg font-bold text-ink">Bill {bill.bill_number}</p>
