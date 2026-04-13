@@ -207,6 +207,15 @@ button:active {
   transform: translateY(1px);
 }
 
+#permitted-button {
+  background: #e53935;
+  color: #ffffff;
+}
+
+#permitted-button:hover {
+  background: #c62828;
+}
+
 .dialog-backdrop {
   position: fixed;
   inset: 0;
