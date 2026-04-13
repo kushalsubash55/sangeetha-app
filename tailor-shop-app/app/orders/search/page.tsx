@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, Suspense, useEffect, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -48,8 +49,10 @@ function DetailRow({
   );
 }
 
-export default function SearchOrderPage() {
+function SearchOrderPageContent() {
   const { isChecking } = useRequireWorkerSession();
+  const searchParams = useSearchParams();
+  const billFromUrl = searchParams.get("bill") ?? "";
   const [billNumber, setBillNumber] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -57,14 +60,13 @@ export default function SearchOrderPage() {
   const [result, setResult] = useState<OrderResult | null>(null);
   const [totalPaid, setTotalPaid] = useState(0);
 
-  async function handleSearch(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function runSearch(rawBillNumber: string) {
     setErrorMessage("");
     setNotFoundMessage("");
     setResult(null);
     setTotalPaid(0);
 
-    if (!billNumber.trim()) {
+    if (!rawBillNumber.trim()) {
       setErrorMessage("Enter bill number.");
       return;
     }
@@ -79,7 +81,7 @@ export default function SearchOrderPage() {
         .select(
           "id, bill_number, customer_name, received_date, ready_date, total_amount, amount_paid, amount_pending, status, notes"
         )
-        .eq("bill_number", billNumber.trim())
+        .eq("bill_number", rawBillNumber.trim())
         .maybeSingle<OrderResult>();
 
       if (orderError) {
@@ -116,6 +118,20 @@ export default function SearchOrderPage() {
       setIsSearching(false);
     }
   }
+
+  async function handleSearch(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await runSearch(billNumber);
+  }
+
+  useEffect(() => {
+    if (!billFromUrl) {
+      return;
+    }
+
+    setBillNumber(billFromUrl);
+    void runSearch(billFromUrl);
+  }, [billFromUrl]);
 
   if (isChecking) {
     return null;
@@ -215,5 +231,13 @@ export default function SearchOrderPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function SearchOrderPage() {
+  return (
+    <Suspense>
+      <SearchOrderPageContent />
+    </Suspense>
   );
 }

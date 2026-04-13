@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
-  ReceiptText,
   SunMedium,
   Truck,
   Wallet,
@@ -57,6 +56,14 @@ type ActivityItem = {
   time: string;
 };
 
+type OpenBillItem = {
+  id: string;
+  bill_number: string;
+  customer_name: string;
+  amount_pending: number;
+  status: string;
+};
+
 const emptySummary: SummaryState = {
   ordersReceivedToday: 0,
   ordersDeliveredToday: 0,
@@ -88,9 +95,11 @@ export default function TodaySummaryPlaceholderPage() {
   const { isChecking } = useRequireWorkerSession();
   const [summary, setSummary] = useState<SummaryState>(emptySummary);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [openBills, setOpenBills] = useState<OpenBillItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [showRecentActivity, setShowRecentActivity] = useState(false);
+  const [showOpenBills, setShowOpenBills] = useState(false);
 
   const todayInfo = useMemo(() => {
     const now = new Date();
@@ -204,12 +213,23 @@ export default function TodaySummaryPlaceholderPage() {
           (order) => order.status.trim().toUpperCase() !== "DELIVERED"
         ).length;
 
+        const openBillItems: OpenBillItem[] = allOrders
+          .filter((order) => order.status.trim().toUpperCase() !== "DELIVERED")
+          .sort((a, b) => Number(b.amount_pending || 0) - Number(a.amount_pending || 0))
+          .map((order) => ({
+            id: order.id,
+            bill_number: order.bill_number,
+            customer_name: order.customer_name,
+            amount_pending: Number(order.amount_pending || 0),
+            status: order.status,
+          }));
+
         const paymentActivity: ActivityItem[] = paymentsToday
           .map((payment) => ({
             title: `Payment ${formatCurrency(Number(payment.amount || 0))}`,
             subtitle: payment.orders?.bill_number
-              ? `Bill ${payment.orders.bill_number} • ${payment.payment_method.toUpperCase()}`
-              : payment.payment_method.toUpperCase(),
+              ? `Bill ${payment.orders.bill_number}`
+              : "Payment received",
             time: payment.payment_date || payment.created_at,
           }))
           .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
@@ -224,6 +244,7 @@ export default function TodaySummaryPlaceholderPage() {
           openBillsCount,
         });
         setRecentActivity(paymentActivity);
+        setOpenBills(openBillItems);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Something went wrong. Try again."
@@ -349,21 +370,54 @@ export default function TodaySummaryPlaceholderPage() {
           </div>
         )}
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
-          <div className="rounded-2xl bg-white px-4 py-4 text-center shadow-sm">
-            <ReceiptText className="mx-auto h-6 w-6 text-brand" />
-            <p className="mt-2 text-sm font-semibold text-slate-500">Cash vs UPI</p>
-            <p className="mt-1 text-lg font-bold text-ink">
-              {formatCurrency(summary.cashCollectedToday)} / {formatCurrency(summary.upiCollectedToday)}
-            </p>
-          </div>
-          <div className="rounded-2xl bg-white px-4 py-4 text-center shadow-sm">
-            <Truck className="mx-auto h-6 w-6 text-brand" />
-            <p className="mt-2 text-sm font-semibold text-slate-500">Bills Still Open</p>
-            <p className="mt-1 text-lg font-bold text-ink">
-              {summary.openBillsCount}
-            </p>
-          </div>
+        <div className="mt-5 space-y-3">
+          <button
+            type="button"
+            onClick={() => setShowOpenBills((current) => !current)}
+            className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-4 text-left shadow-sm"
+          >
+            <span className="flex items-center gap-3">
+              <Truck className="h-6 w-6 text-brand" />
+              <span>
+                <span className="block text-base font-bold text-ink">Bills Still Open</span>
+                <span className="block text-sm font-semibold text-slate-600">
+                  {summary.openBillsCount} open bills
+                </span>
+              </span>
+            </span>
+            {showOpenBills ? (
+              <ChevronUp className="h-5 w-5 text-ink" />
+            ) : (
+              <ChevronDown className="h-5 w-5 text-ink" />
+            )}
+          </button>
+
+          {showOpenBills ? (
+            <div className="space-y-3 rounded-[22px] bg-white px-4 py-4 shadow-sm">
+              <p className="text-lg font-bold text-ink">Open Bills</p>
+              {openBills.length === 0 ? (
+                <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
+                  No open bills.
+                </div>
+              ) : (
+                openBills.map((bill) => (
+                  <Link
+                    key={bill.id}
+                    href={`/orders/search?bill=${encodeURIComponent(bill.bill_number)}`}
+                    className="block rounded-2xl border border-sand bg-cream px-4 py-4"
+                  >
+                    <p className="text-lg font-bold text-ink">Bill {bill.bill_number}</p>
+                    <p className="mt-1 text-base font-semibold text-slate-700">
+                      {bill.customer_name}
+                    </p>
+                    <p className="mt-2 text-sm font-semibold text-slate-600">
+                      Pending {formatCurrency(bill.amount_pending)} • {bill.status}
+                    </p>
+                  </Link>
+                ))
+              )}
+            </div>
+          ) : null}
         </div>
 
         <Link
