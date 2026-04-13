@@ -161,6 +161,13 @@ export default function SummaryBillDetailsPage() {
           <ArrowLeft className="h-5 w-5" />
           Back
         </Link>
+
+        <Link
+          href="/"
+          className="mt-3 flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
+        >
+          Home
+        </Link>
       </section>
     </main>
   );

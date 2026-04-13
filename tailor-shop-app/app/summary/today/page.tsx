@@ -401,10 +401,9 @@ export default function TodaySummaryPlaceholderPage() {
                 </div>
               ) : (
                 openBills.map((bill) => (
-                  <Link
+                  <div
                     key={bill.id}
-                    href={`/summary/bill/${encodeURIComponent(bill.bill_number)}`}
-                    className="block rounded-2xl border border-sand bg-cream px-4 py-4"
+                    className="rounded-2xl border border-sand bg-cream px-4 py-4"
                   >
                     <p className="text-lg font-bold text-ink">Bill {bill.bill_number}</p>
                     <p className="mt-1 text-base font-semibold text-slate-700">
@@ -413,7 +412,13 @@ export default function TodaySummaryPlaceholderPage() {
                     <p className="mt-2 text-sm font-semibold text-slate-600">
                       Pending {formatCurrency(bill.amount_pending)} • {bill.status}
                     </p>
-                  </Link>
+                    <Link
+                      href={`/summary/bill/${encodeURIComponent(bill.bill_number)}`}
+                      className="mt-3 inline-block text-sm font-bold text-brand underline underline-offset-4"
+                    >
+                      More Details
+                    </Link>
+                  </div>
                 ))
               )}
             </div>
