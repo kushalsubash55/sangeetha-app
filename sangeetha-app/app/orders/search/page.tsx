@@ -141,7 +141,7 @@ function SearchOrderPageContent() {
   return (
     <main className="min-h-screen px-4 py-6">
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
-        <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
+        <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
           <h1 className="mt-2 text-3xl font-bold leading-tight">Search Bill</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
@@ -208,7 +208,7 @@ function SearchOrderPageContent() {
           {result ? (
             <Link
               href={`/delivery?bill=${encodeURIComponent(result.bill_number)}`}
-              className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-4 text-lg font-bold text-ink shadow-sm"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1479dc_0%,#2ca8f5_100%)] px-4 py-4 text-lg font-bold text-white shadow-[0_14px_28px_rgba(20,121,220,0.24)]"
             >
               <ArrowRight className="h-5 w-5" />
               Delivery
@@ -217,7 +217,7 @@ function SearchOrderPageContent() {
             <button
               type="button"
               disabled
-              className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-4 text-lg font-bold text-ink opacity-70 shadow-sm"
+              className="flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1479dc_0%,#2ca8f5_100%)] px-4 py-4 text-lg font-bold text-white opacity-70 shadow-[0_14px_28px_rgba(20,121,220,0.24)]"
             >
               <ArrowRight className="h-5 w-5" />
               Delivery

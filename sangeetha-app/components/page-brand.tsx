@@ -13,7 +13,7 @@ export function PageBrand({ showHome = false }: PageBrandProps) {
     <div className="mb-2 flex items-start gap-3">
       {showHome ? <HeaderHomeLink /> : null}
       <div className="min-w-0 flex-1">
-        <div className="inline-flex max-w-[220px] rounded-2xl bg-white/92 px-3 py-2 shadow-sm">
+        <div className="inline-flex max-w-[220px] rounded-2xl border border-white/80 bg-white px-3 py-2 shadow-[0_12px_28px_rgba(16,111,208,0.22)]">
           <Image
             src="/brand/sangeetha-logo.png"
             alt="Sangeetha"

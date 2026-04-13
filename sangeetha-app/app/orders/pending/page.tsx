@@ -15,7 +15,7 @@ export default function PendingOrdersPlaceholderPage() {
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-6">
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
-        <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
+        <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
           <h1 className="mt-2 text-3xl font-bold leading-tight">Pending Orders</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
