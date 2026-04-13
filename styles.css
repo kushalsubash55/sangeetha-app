@@ -1,13 +1,12 @@
 :root {
   color-scheme: light;
-  --bg-top: #f7efe4;
-  --bg-bottom: #e7f0ff;
-  --card: #ffffff;
-  --text: #1d2433;
-  --muted: #5d6678;
-  --border: #cfd7e6;
-  --button: #1f6feb;
-  --button-hover: #1559be;
+  --bg-solid: #42b7f3;
+  --card: #42b7f3;
+  --text: #ffffff;
+  --muted: rgba(255, 255, 255, 0.88);
+  --border: rgba(255, 255, 255, 0.34);
+  --button: #ffffff;
+  --button-hover: #e6f5ff;
   --success-bg: #e6f7ea;
   --success-text: #1d6b34;
   --error-bg: #fde7e7;
@@ -22,45 +21,54 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: linear-gradient(160deg, var(--bg-top), var(--bg-bottom));
+  background: var(--bg-solid);
   color: var(--text);
 }
 
 .page {
   min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
+  padding: 0;
 }
 
 .card {
-  width: min(100%, 430px);
+  width: 100%;
+  min-height: 100vh;
   background: var(--card);
-  border: 1px solid rgba(207, 215, 230, 0.9);
-  border-radius: 20px;
-  padding: 28px;
-  box-shadow: 0 18px 40px rgba(44, 63, 88, 0.12);
+  display: grid;
+  align-content: start;
+  gap: 0;
+  padding: 48px clamp(20px, 6vw, 88px);
 }
 
 .brand-lockup {
   display: flex;
   justify-content: center;
-  margin-bottom: 22px;
-  padding: 14px 16px 10px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #eff5ff, #f8fbff);
-  border: 1px solid #d8e3f8;
+  margin-bottom: 40px;
+  padding: 24px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  min-height: 220px;
+  align-items: center;
 }
 
 .brand-logo {
   display: block;
-  width: min(100%, 260px);
+  width: min(100%, 520px);
   height: auto;
+}
+
+.eyebrow,
+h1,
+.intro,
+.entry-form,
+.entries-panel {
+  width: min(100%, 640px);
 }
 
 .eyebrow {
   margin: 0 0 8px;
-  color: var(--button);
+  color: #ffffff;
   font-size: 0.8rem;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -69,18 +77,83 @@ body {
 
 h1 {
   margin: 0;
-  font-size: clamp(2rem, 4vw, 2.5rem);
+  font-size: clamp(2.4rem, 5vw, 4.6rem);
 }
 
 .intro {
   margin: 10px 0 24px;
   color: var(--muted);
   line-height: 1.5;
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
 }
 
 .entry-form {
   display: grid;
   gap: 16px;
+}
+
+.entries-panel {
+  margin-top: 32px;
+  padding: 24px;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.entries-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.entries-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.secondary-button {
+  padding: 10px 16px;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+}
+
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.entries-empty {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.entries-list {
+  display: grid;
+  gap: 14px;
+}
+
+.entry-item {
+  padding: 18px 20px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+}
+
+.entry-name,
+.entry-meta {
+  margin: 0;
+}
+
+.entry-name {
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.entry-meta {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .field {
@@ -95,25 +168,33 @@ h1 {
 
 .field input {
   width: 100%;
-  padding: 12px 14px;
+  padding: 16px 18px;
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   font: inherit;
+  font-size: 1.05rem;
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
 }
 
 .field input:focus {
-  outline: 2px solid rgba(31, 111, 235, 0.2);
-  border-color: var(--button);
+  outline: 2px solid rgba(255, 255, 255, 0.22);
+  border-color: #ffffff;
+}
+
+.field input::placeholder {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 button {
   border: 0;
   border-radius: 999px;
-  padding: 13px 18px;
+  padding: 16px 22px;
   background: var(--button);
-  color: #fff;
+  color: #1f6feb;
   font: inherit;
   font-weight: 700;
+  font-size: 1.05rem;
   cursor: pointer;
   transition: background 120ms ease, transform 120ms ease;
 }
@@ -142,6 +223,7 @@ button:active {
 .dialog-box {
   width: min(100%, 360px);
   background: #ffffff;
+  color: #1d2433;
   border-radius: 18px;
   padding: 24px;
   box-shadow: 0 22px 50px rgba(16, 24, 40, 0.2);
@@ -151,11 +233,12 @@ button:active {
 .dialog-box h2 {
   margin: 0 0 12px;
   font-size: 1.35rem;
+  color: #1d2433;
 }
 
 .dialog-box p {
   margin: 0 0 18px;
-  color: var(--muted);
+  color: #5d6678;
   line-height: 1.5;
 }
 
@@ -165,10 +248,25 @@ button:active {
 
 @media (max-width: 480px) {
   .page {
-    padding: 16px;
+    padding: 0;
   }
 
   .card {
-    padding: 22px;
+    padding: 24px 16px 32px;
+  }
+
+  .brand-lockup {
+    min-height: 150px;
+    margin-bottom: 28px;
+    padding: 18px;
+  }
+
+  .brand-logo {
+    width: min(100%, 320px);
+  }
+
+  .entries-header {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

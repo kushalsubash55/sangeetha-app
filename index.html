@@ -44,6 +44,15 @@
           <button id="permitted-button" type="submit">Permited Button</button>
         </form>
 
+        <section class="entries-panel" aria-labelledby="entries-title">
+          <div class="entries-header">
+            <h2 id="entries-title">Saved Entries</h2>
+            <button id="clear-entries" type="button" class="secondary-button">Clear All</button>
+          </div>
+          <p id="entries-empty" class="entries-empty">No entries stored yet for today.</p>
+          <div id="entries-list" class="entries-list"></div>
+        </section>
+
       </section>
     </main>
 
@@ -63,10 +72,50 @@
 
     <script>
       const form = document.getElementById("entry-form");
+      const fullNameInput = document.getElementById("full-name");
       const ageInput = document.getElementById("age");
       const dialogBackdrop = document.getElementById("dialog-backdrop");
       const dialogMessage = document.getElementById("dialog-message");
       const dialogClose = document.getElementById("dialog-close");
+      const entriesList = document.getElementById("entries-list");
+      const entriesEmpty = document.getElementById("entries-empty");
+      const clearEntriesButton = document.getElementById("clear-entries");
+      const storageKey = "slk-permission-entries";
+
+      const readEntries = () => {
+        try {
+          return JSON.parse(localStorage.getItem(storageKey)) ?? [];
+        } catch (error) {
+          return [];
+        }
+      };
+
+      const writeEntries = (entries) => {
+        localStorage.setItem(storageKey, JSON.stringify(entries));
+      };
+
+      const renderEntries = () => {
+        const entries = readEntries();
+        entriesList.innerHTML = "";
+
+        if (entries.length === 0) {
+          entriesEmpty.hidden = false;
+          return;
+        }
+
+        entriesEmpty.hidden = true;
+
+        entries.forEach((entry) => {
+          const item = document.createElement("article");
+          item.className = "entry-item";
+          item.innerHTML = `
+            <p class="entry-name">${entry.fullName}</p>
+            <p class="entry-meta">Age: ${entry.age}</p>
+            <p class="entry-meta">Status: ${entry.status}</p>
+          `;
+          entriesList.appendChild(item);
+        });
+      };
 
       const showDialog = (message) => {
         dialogMessage.textContent = message;
@@ -87,12 +136,24 @@
         }
       });
 
+      clearEntriesButton.addEventListener("click", () => {
+        localStorage.removeItem(storageKey);
+        renderEntries();
+      });
+
       form.addEventListener("submit", (event) => {
         event.preventDefault();
 
+        const fullName = fullNameInput.value.trim();
         const age = Number(ageInput.value);
 
         let message = "";
+        let status = "";
+
+        if (!fullName) {
+          showDialog("Please enter your full name.");
+          return;
+        }
 
         if (Number.isNaN(age)) {
           message = "Please enter a valid age.";
@@ -102,13 +163,26 @@
 
         if (age < 40) {
           message = "You are good to enter";
-          showDialog(message);
-          return;
+          status = "Allowed";
+        } else {
+          message = "Not allowed to Enter";
+          status = "Not Allowed";
         }
 
-        message = "Not allowed to Enter";
+        const entries = readEntries();
+        entries.unshift({
+          fullName,
+          age,
+          status,
+          createdAt: new Date().toISOString(),
+        });
+        writeEntries(entries);
+        renderEntries();
+        form.reset();
         showDialog(message);
       });
+
+      renderEntries();
     </script>
   </body>
 </html>
