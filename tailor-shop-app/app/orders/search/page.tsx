@@ -5,9 +5,6 @@ import Link from "next/link";
 import {
   ArrowLeft,
   ArrowRight,
-  BadgeIndianRupee,
-  CalendarDays,
-  FileText,
   ReceiptText,
   Search,
 } from "lucide-react";
@@ -187,18 +184,28 @@ export default function SearchOrderPage() {
             <ArrowLeft className="h-5 w-5" />
             Home
           </Link>
-          <button
-            type="button"
-            disabled
-            className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-4 text-lg font-bold text-ink opacity-70 shadow-sm"
-          >
-            <ArrowRight className="h-5 w-5" />
-            Delivery
-          </button>
+          {result ? (
+            <Link
+              href={`/delivery?bill=${encodeURIComponent(result.bill_number)}`}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-4 text-lg font-bold text-ink shadow-sm"
+            >
+              <ArrowRight className="h-5 w-5" />
+              Delivery
+            </Link>
+          ) : (
+            <button
+              type="button"
+              disabled
+              className="flex items-center justify-center gap-2 rounded-2xl bg-accent px-4 py-4 text-lg font-bold text-ink opacity-70 shadow-sm"
+            >
+              <ArrowRight className="h-5 w-5" />
+              Delivery
+            </button>
+          )}
         </div>
 
         <div className="mt-3 rounded-2xl bg-cream px-4 py-4 text-center text-sm font-semibold text-slate-600">
-          Delivery / Payment screen will be connected next.
+          Open Delivery after finding the order.
         </div>
       </section>
     </main>
