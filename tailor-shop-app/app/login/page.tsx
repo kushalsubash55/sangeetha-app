@@ -1,8 +1,48 @@
+"use client";
+
+import { FormEvent, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { LogIn, Phone, ShieldCheck } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
+import { getWorkerSession, setWorkerSession } from "@/lib/session";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    const existingSession = getWorkerSession();
+
+    if (existingSession) {
+      router.replace("/");
+    }
+  }, [router]);
+
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrorMessage("");
+
+    if (!phone.trim()) {
+      setErrorMessage("Enter phone number.");
+      return;
+    }
+
+    if (!pin.trim()) {
+      setErrorMessage("Enter PIN.");
+      return;
+    }
+
+    setWorkerSession({
+      phone: phone.trim(),
+      role: "worker",
+    });
+
+    router.push("/");
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4 py-6">
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
@@ -18,12 +58,14 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <form className="space-y-4">
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <InputField
             label="Phone Number"
             name="phone"
             placeholder="Enter phone number"
             type="tel"
+            value={phone}
+            onChange={(event) => setPhone(event.target.value)}
             icon={<Phone className="h-6 w-6" />}
           />
           <InputField
@@ -31,8 +73,15 @@ export default function LoginPage() {
             name="pin"
             placeholder="Enter PIN"
             type="password"
+            value={pin}
+            onChange={(event) => setPin(event.target.value)}
             icon={<ShieldCheck className="h-6 w-6" />}
           />
+          {errorMessage ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
+              {errorMessage}
+            </div>
+          ) : null}
           <BigButton type="submit">
             <LogIn className="h-6 w-6" />
             Login

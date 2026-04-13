@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
+import Link from "next/link";
 import {
+  ArrowLeft,
   BadgeIndianRupee,
   CalendarDays,
   CheckCircle2,
@@ -15,6 +17,7 @@ import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, todayDate } from "@/lib/utils";
+import { useRequireWorkerSession } from "@/lib/session";
 
 type PaymentMode = "cash" | "upi" | "none";
 
@@ -41,6 +44,7 @@ const initialForm: FormState = {
 };
 
 export default function NewOrderPage() {
+  const { isChecking } = useRequireWorkerSession();
   const [form, setForm] = useState<FormState>(initialForm);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -184,6 +188,10 @@ export default function NewOrderPage() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  if (isChecking) {
+    return null;
   }
 
   return (
@@ -340,6 +348,14 @@ export default function NewOrderPage() {
             {isSaving ? "Saving..." : "Save Order"}
           </BigButton>
         </form>
+
+        <Link
+          href="/"
+          className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Home
+        </Link>
       </section>
     </main>
   );

@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
+import { useRequireWorkerSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency } from "@/lib/utils";
 
@@ -34,6 +35,14 @@ type PaymentRow = {
   amount: number;
 };
 
+type DeliveryPaymentResult = {
+  order_id: string;
+  bill_number: string;
+  total_paid: number;
+  amount_pending: number;
+  status: string;
+};
+
 function DetailRow({
   label,
   value,
@@ -51,7 +60,16 @@ function DetailRow({
   );
 }
 
+function isDeliveredOrder(order: OrderResult | null) {
+  if (!order) {
+    return false;
+  }
+
+  return order.status.trim().toUpperCase() === "DELIVERED" || Number(order.amount_pending) === 0;
+}
+
 function DeliveryPageContent() {
+  const { isChecking } = useRequireWorkerSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const billFromUrl = searchParams.get("bill") ?? "";
@@ -66,6 +84,7 @@ function DeliveryPageContent() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [notFoundMessage, setNotFoundMessage] = useState("");
+  const delivered = isDeliveredOrder(order);
 
   useEffect(() => {
     setBillNumber(billFromUrl);
@@ -171,78 +190,38 @@ function DeliveryPageContent() {
 
     try {
       const supabase = getSupabaseClient();
-      const newTotalPaid = totalPaid + receivedNow;
-      const newPending = order.amount_pending - receivedNow;
-      const nextStatus = newPending === 0 ? "DELIVERED" : order.status;
+      const { data, error } = await supabase.rpc("record_delivery_payment", {
+        p_bill_number: order.bill_number,
+        p_amount_received: receivedNow,
+        p_payment_method: paymentMode,
+      });
 
-      if (receivedNow > 0) {
-        const paymentType =
-          newPending === 0 ? "full" : totalPaid === 0 ? "advance" : "partial";
-
-        const { error: paymentError } = await supabase.from("payments").insert({
-          order_id: order.id,
-          amount: receivedNow,
-          payment_method: paymentMode,
-          payment_type: paymentType,
-          note: newPending === 0 ? "Final payment received" : "Payment recorded",
-        });
-
-        if (paymentError) {
-          setErrorMessage(paymentError.message || "Could not save payment.");
-          return;
-        }
-      }
-
-      if (newPending === 0 && order.status !== "DELIVERED") {
-        const { error: deliveryError } = await supabase.from("deliveries").insert({
-          order_id: order.id,
-          note: "Delivered",
-        });
-
-        if (deliveryError) {
-          setErrorMessage(deliveryError.message || "Could not save delivery.");
-          return;
-        }
-      }
-
-      const { error: updateError } = await supabase
-        .from("orders")
-        .update({
-          amount_pending: newPending,
-          status: nextStatus,
-        })
-        .eq("id", order.id);
-
-      if (updateError) {
-        setErrorMessage(updateError.message || "Could not update order.");
+      if (error) {
+        setErrorMessage(error.message || "Could not save payment.");
         return;
       }
 
-      await supabase.from("audit_logs").insert({
-        action: "ORDER_PAYMENT_UPDATED",
-        table_name: "orders",
-        record_id: order.id,
-        details: {
-          bill_number: order.bill_number,
-          amount_received_now: receivedNow,
-          payment_mode: paymentMode,
-          auto_delivered: newPending === 0,
-          status: nextStatus,
-          amount_pending: newPending,
-        },
-      });
+      const paymentResult = Array.isArray(data)
+        ? (data[0] as DeliveryPaymentResult | undefined)
+        : (data as DeliveryPaymentResult | null);
+
+      if (!paymentResult) {
+        setErrorMessage("Could not save payment.");
+        return;
+      }
 
       const refreshedOrder: OrderResult = {
         ...order,
-        amount_pending: newPending,
-        status: nextStatus,
+        amount_paid: Number(paymentResult.total_paid),
+        amount_pending: Number(paymentResult.amount_pending),
+        status: paymentResult.status,
       };
 
       setOrder(refreshedOrder);
-      setTotalPaid(newTotalPaid);
+      setTotalPaid(Number(paymentResult.total_paid));
       setAmountReceivedNow("");
 
-      if (newPending === 0) {
+      if (Number(paymentResult.amount_pending) === 0) {
         setSuccessMessage("Bill is delivered. Returning to home page...");
         window.setTimeout(() => {
           router.push("/");
@@ -251,7 +230,7 @@ function DeliveryPageContent() {
       }
 
       setSuccessMessage(
-        `Payment saved. Total paid ${formatCurrency(newTotalPaid)}. Pending ${formatCurrency(newPending)}.`
+        `Payment saved. Total paid ${formatCurrency(Number(paymentResult.total_paid))}. Pending ${formatCurrency(Number(paymentResult.amount_pending))}.`
       );
     } catch (error) {
       console.error("Delivery save failed", error);
@@ -261,6 +240,10 @@ function DeliveryPageContent() {
     } finally {
       setIsSaving(false);
     }
+  }
+
+  if (isChecking) {
+    return null;
   }
 
   return (
@@ -313,7 +296,7 @@ function DeliveryPageContent() {
         ) : null}
 
         {order ? (
-          <form className="mt-5 space-y-4" onSubmit={handleSave}>
+          <div className="mt-5 space-y-4">
             <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
               <p className="text-base font-semibold text-ink">Bill {order.bill_number}</p>
               <p className="mt-1 text-2xl font-bold text-brand">{order.customer_name}</p>
@@ -331,51 +314,59 @@ function DeliveryPageContent() {
             <DetailRow label="Current Status" value={order.status} />
             <DetailRow label="Notes" value={order.notes || "No notes"} />
 
-            <InputField
-              label="Amount Received Now"
-              name="amountReceivedNow"
-              placeholder="Enter amount"
-              type="number"
-              min="0"
-              step="1"
-              inputMode="decimal"
-              value={amountReceivedNow}
-              onChange={(event) => setAmountReceivedNow(event.target.value)}
-              icon={<Wallet className="h-6 w-6" />}
-            />
-
-            <div>
-              <p className="mb-2 text-lg font-semibold text-ink">Payment Mode</p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { label: "Cash", value: "cash" },
-                  { label: "UPI", value: "upi" },
-                ].map((option) => {
-                  const active = paymentMode === option.value;
-
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => setPaymentMode(option.value as PaymentMode)}
-                      className={`rounded-2xl border px-3 py-4 text-lg font-bold transition ${
-                        active
-                          ? "border-brand bg-brand text-white shadow-md"
-                          : "border-sand bg-white text-ink"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  );
-                })}
+            {delivered ? (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center text-base font-semibold text-emerald-700">
+                This bill is already delivered.
               </div>
-            </div>
+            ) : (
+              <form className="space-y-4" onSubmit={handleSave}>
+                <InputField
+                  label="Amount Received Now"
+                  name="amountReceivedNow"
+                  placeholder="Enter amount"
+                  type="number"
+                  min="0"
+                  step="1"
+                  inputMode="decimal"
+                  value={amountReceivedNow}
+                  onChange={(event) => setAmountReceivedNow(event.target.value)}
+                  icon={<Wallet className="h-6 w-6" />}
+                />
 
-            <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
-              <Truck className="h-6 w-6" />
-              {isSaving ? "Saving..." : "Save Payment"}
-            </BigButton>
-          </form>
+                <div>
+                  <p className="mb-2 text-lg font-semibold text-ink">Payment Mode</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    {[
+                      { label: "Cash", value: "cash" },
+                      { label: "UPI", value: "upi" },
+                    ].map((option) => {
+                      const active = paymentMode === option.value;
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => setPaymentMode(option.value as PaymentMode)}
+                          className={`rounded-2xl border px-3 py-4 text-lg font-bold transition ${
+                            active
+                              ? "border-brand bg-brand text-white shadow-md"
+                              : "border-sand bg-white text-ink"
+                          }`}
+                        >
+                          {option.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
+                  <Truck className="h-6 w-6" />
+                  {isSaving ? "Saving..." : "Save Payment"}
+                </BigButton>
+              </form>
+            )}
+          </div>
         ) : null}
 
         <Link

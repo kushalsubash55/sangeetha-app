@@ -11,6 +11,7 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { getSupabaseClient } from "@/lib/supabase";
+import { useRequireWorkerSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
 
 type OrderResult = {
@@ -48,6 +49,7 @@ function DetailRow({
 }
 
 export default function SearchOrderPage() {
+  const { isChecking } = useRequireWorkerSession();
   const [billNumber, setBillNumber] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -113,6 +115,10 @@ export default function SearchOrderPage() {
     } finally {
       setIsSearching(false);
     }
+  }
+
+  if (isChecking) {
+    return null;
   }
 
   return (
