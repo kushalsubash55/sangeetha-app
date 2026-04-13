@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Phone, ShieldCheck } from "lucide-react";
 import { BigButton } from "@/components/big-button";
+import { HeaderDate } from "@/components/header-date";
 import { InputField } from "@/components/input-field";
 import { getWorkerSession, setWorkerSession } from "@/lib/session";
 
@@ -48,8 +49,9 @@ export default function LoginPage() {
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="mb-6 rounded-[24px] bg-brand px-5 py-6 text-white">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
-            Tailor Shop
+            Sangeetha
           </p>
+          <HeaderDate />
           <h1 className="mt-2 text-3xl font-bold leading-tight">
             Worker Login
           </h1>

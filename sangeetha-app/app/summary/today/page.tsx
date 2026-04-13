@@ -10,6 +10,7 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
+import { HeaderDate } from "@/components/header-date";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
@@ -266,8 +267,9 @@ export default function TodaySummaryPlaceholderPage() {
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
-            Tailor Shop
+            Sangeetha
           </p>
+          <HeaderDate />
           <h1 className="mt-2 text-3xl font-bold leading-tight">Today Summary</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
             Summary for {todayInfo.label}
