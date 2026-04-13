@@ -176,8 +176,11 @@ export default function NewOrderPage() {
         ...initialForm,
         receivedDate: todayDate(),
       });
-    } catch {
-      setErrorMessage("Something went wrong. Try again.");
+    } catch (error) {
+      console.error("New order save failed", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "Something went wrong. Try again."
+      );
     } finally {
       setIsSaving(false);
     }
