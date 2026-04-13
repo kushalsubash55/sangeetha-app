@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { HeaderDate } from "@/components/header-date";
+import { HeaderHomeLink } from "@/components/header-home-link";
 import { InputField } from "@/components/input-field";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
@@ -141,7 +142,8 @@ function SearchOrderPageContent() {
   return (
     <main className="min-h-screen px-4 py-6">
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
-        <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
+        <div className="relative rounded-[24px] bg-brand px-5 py-6 text-white">
+          <HeaderHomeLink />
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
             Sangeetha
           </p>
@@ -206,7 +208,7 @@ function SearchOrderPageContent() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Home
+            Back
           </Link>
           {result ? (
             <Link
@@ -231,6 +233,7 @@ function SearchOrderPageContent() {
         <div className="mt-3 rounded-2xl bg-cream px-4 py-4 text-center text-sm font-semibold text-slate-600">
           Open Delivery after finding the order.
         </div>
+
       </section>
     </main>
   );

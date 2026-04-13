@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { HeaderDate } from "@/components/header-date";
+import { HeaderHomeLink } from "@/components/header-home-link";
 import { InputField } from "@/components/input-field";
 import { useRequireWorkerSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -250,7 +251,8 @@ function DeliveryPageContent() {
   return (
     <main className="min-h-screen px-4 py-6">
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
-        <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
+        <div className="relative rounded-[24px] bg-brand px-5 py-6 text-white">
+          <HeaderHomeLink />
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
             Sangeetha
           </p>
@@ -371,13 +373,15 @@ function DeliveryPageContent() {
           </div>
         ) : null}
 
-        <Link
-          href="/"
-          className="mt-5 flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          Home
-        </Link>
+        <div className="mt-5">
+          <Link
+            href="/"
+            className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
+          >
+            <ArrowLeft className="h-5 w-5" />
+            Back
+          </Link>
+        </div>
       </section>
     </main>
   );

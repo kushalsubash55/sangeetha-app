@@ -21,7 +21,6 @@ export default function HomePage() {
             Sangeetha
           </p>
           <HeaderDate />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">Home</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
             Choose one simple action.
           </p>
