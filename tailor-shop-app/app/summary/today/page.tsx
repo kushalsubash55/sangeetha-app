@@ -2,7 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ReceiptText, ShoppingBag, SunMedium, Truck, Wallet } from "lucide-react";
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  ReceiptText,
+  ShoppingBag,
+  SunMedium,
+  Truck,
+  Wallet,
+} from "lucide-react";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
@@ -51,6 +60,13 @@ type ActivityItem = {
   time: string;
 };
 
+type PaymentActivityItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  time: string;
+};
+
 const emptySummary: SummaryState = {
   ordersReceivedToday: 0,
   ordersDeliveredToday: 0,
@@ -82,8 +98,10 @@ export default function TodaySummaryPlaceholderPage() {
   const { isChecking } = useRequireWorkerSession();
   const [summary, setSummary] = useState<SummaryState>(emptySummary);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
+  const [todayPayments, setTodayPayments] = useState<PaymentActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showPayments, setShowPayments] = useState(false);
 
   const todayInfo = useMemo(() => {
     const now = new Date();
@@ -197,26 +215,24 @@ export default function TodaySummaryPlaceholderPage() {
           (order) => order.status.trim().toUpperCase() !== "DELIVERED"
         ).length;
 
-        const mergedActivity: ActivityItem[] = [
-          ...recentOrders.map((order) => ({
-            id: `order-${order.id}`,
-            type: "order" as const,
-            title: `New bill ${order.bill_number}`,
-            subtitle: order.customer_name,
-            time: order.created_at,
-          })),
-          ...recentPayments.map((payment) => ({
+        const orderActivity: ActivityItem[] = recentOrders.map((order) => ({
+          id: `order-${order.id}`,
+          type: "order" as const,
+          title: `New bill ${order.bill_number}`,
+          subtitle: order.customer_name,
+          time: order.created_at,
+        }));
+
+        const paymentActivity: PaymentActivityItem[] = paymentsToday
+          .map((payment) => ({
             id: `payment-${payment.order_id}-${payment.payment_date}`,
-            type: "payment" as const,
             title: `Payment ${formatCurrency(Number(payment.amount || 0))}`,
             subtitle: payment.orders?.bill_number
               ? `Bill ${payment.orders.bill_number} • ${payment.payment_method.toUpperCase()}`
               : payment.payment_method.toUpperCase(),
             time: payment.payment_date || payment.created_at,
-          })),
-        ]
-          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
-          .slice(0, 6);
+          }))
+          .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
 
         setSummary({
           ordersReceivedToday: ordersTodayResult.count ?? 0,
@@ -227,7 +243,8 @@ export default function TodaySummaryPlaceholderPage() {
           totalPendingAmount,
           openBillsCount,
         });
-        setRecentActivity(mergedActivity);
+        setRecentActivity(orderActivity.slice(0, 4));
+        setTodayPayments(paymentActivity);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Something went wrong. Try again."
@@ -331,6 +348,59 @@ export default function TodaySummaryPlaceholderPage() {
                   ))
                 )}
               </div>
+
+              <button
+                type="button"
+                onClick={() => setShowPayments((current) => !current)}
+                className="mt-4 flex w-full items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-4 text-left"
+              >
+                <span>
+                  <span className="block text-base font-bold text-ink">Today&apos;s Payments</span>
+                  <span className="block text-sm font-semibold text-slate-600">
+                    {todayPayments.length} payments today
+                  </span>
+                </span>
+                {showPayments ? (
+                  <ChevronUp className="h-5 w-5 text-ink" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-ink" />
+                )}
+              </button>
+
+              {showPayments ? (
+                <div className="mt-3 space-y-3">
+                  {todayPayments.length === 0 ? (
+                    <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
+                      No payments today.
+                    </div>
+                  ) : (
+                    todayPayments.map((payment) => (
+                      <div
+                        key={payment.id}
+                        className="rounded-2xl border border-sand bg-cream px-4 py-4"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="rounded-xl bg-white p-2 text-brand shadow-sm">
+                            <Wallet className="h-5 w-5" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-base font-bold text-ink">{payment.title}</p>
+                            <p className="text-sm font-semibold text-slate-600">
+                              {payment.subtitle}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-3 text-sm font-semibold text-slate-500">
+                          {new Date(payment.time).toLocaleTimeString("en-IN", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         )}
