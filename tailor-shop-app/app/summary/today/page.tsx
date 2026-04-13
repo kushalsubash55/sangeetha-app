@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   ReceiptText,
-  ShoppingBag,
   SunMedium,
   Truck,
   Wallet,
@@ -53,15 +52,6 @@ type SummaryState = {
 };
 
 type ActivityItem = {
-  id: string;
-  type: "order" | "payment";
-  title: string;
-  subtitle: string;
-  time: string;
-};
-
-type PaymentActivityItem = {
-  id: string;
   title: string;
   subtitle: string;
   time: string;
@@ -98,10 +88,9 @@ export default function TodaySummaryPlaceholderPage() {
   const { isChecking } = useRequireWorkerSession();
   const [summary, setSummary] = useState<SummaryState>(emptySummary);
   const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
-  const [todayPayments, setTodayPayments] = useState<PaymentActivityItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [showPayments, setShowPayments] = useState(false);
+  const [showRecentActivity, setShowRecentActivity] = useState(false);
 
   const todayInfo = useMemo(() => {
     const now = new Date();
@@ -215,17 +204,8 @@ export default function TodaySummaryPlaceholderPage() {
           (order) => order.status.trim().toUpperCase() !== "DELIVERED"
         ).length;
 
-        const orderActivity: ActivityItem[] = recentOrders.map((order) => ({
-          id: `order-${order.id}`,
-          type: "order" as const,
-          title: `New bill ${order.bill_number}`,
-          subtitle: order.customer_name,
-          time: order.created_at,
-        }));
-
-        const paymentActivity: PaymentActivityItem[] = paymentsToday
+        const paymentActivity: ActivityItem[] = paymentsToday
           .map((payment) => ({
-            id: `payment-${payment.order_id}-${payment.payment_date}`,
             title: `Payment ${formatCurrency(Number(payment.amount || 0))}`,
             subtitle: payment.orders?.bill_number
               ? `Bill ${payment.orders.bill_number} • ${payment.payment_method.toUpperCase()}`
@@ -243,8 +223,7 @@ export default function TodaySummaryPlaceholderPage() {
           totalPendingAmount,
           openBillsCount,
         });
-        setRecentActivity(orderActivity.slice(0, 4));
-        setTodayPayments(paymentActivity);
+        setRecentActivity(paymentActivity);
       } catch (error) {
         setErrorMessage(
           error instanceof Error ? error.message : "Something went wrong. Try again."
@@ -314,69 +293,34 @@ export default function TodaySummaryPlaceholderPage() {
 
             <div className="rounded-[22px] bg-white px-4 py-4 shadow-sm">
               <p className="text-lg font-bold text-ink">Recent Activity</p>
-              <div className="mt-4 space-y-3">
-                {recentActivity.length === 0 ? (
-                  <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
-                    No activity today.
-                  </div>
-                ) : (
-                  recentActivity.map((item) => (
-                    <div
-                      key={item.id}
-                      className="rounded-2xl border border-sand bg-cream px-4 py-4"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="rounded-xl bg-white p-2 text-brand shadow-sm">
-                          {item.type === "order" ? (
-                            <ShoppingBag className="h-5 w-5" />
-                          ) : (
-                            <Wallet className="h-5 w-5" />
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-base font-bold text-ink">{item.title}</p>
-                          <p className="text-sm font-semibold text-slate-600">{item.subtitle}</p>
-                        </div>
-                      </div>
-                      <p className="mt-3 text-sm font-semibold text-slate-500">
-                        {new Date(item.time).toLocaleTimeString("en-IN", {
-                          hour: "numeric",
-                          minute: "2-digit",
-                        })}
-                      </p>
-                    </div>
-                  ))
-                )}
-              </div>
-
               <button
                 type="button"
-                onClick={() => setShowPayments((current) => !current)}
+                onClick={() => setShowRecentActivity((current) => !current)}
                 className="mt-4 flex w-full items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-4 text-left"
               >
                 <span>
-                  <span className="block text-base font-bold text-ink">Today&apos;s Payments</span>
+                  <span className="block text-base font-bold text-ink">Open Recent Payments</span>
                   <span className="block text-sm font-semibold text-slate-600">
-                    {todayPayments.length} payments today
+                    {recentActivity.length} payments today
                   </span>
                 </span>
-                {showPayments ? (
+                {showRecentActivity ? (
                   <ChevronUp className="h-5 w-5 text-ink" />
                 ) : (
                   <ChevronDown className="h-5 w-5 text-ink" />
                 )}
               </button>
 
-              {showPayments ? (
+              {showRecentActivity ? (
                 <div className="mt-3 space-y-3">
-                  {todayPayments.length === 0 ? (
+                  {recentActivity.length === 0 ? (
                     <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
                       No payments today.
                     </div>
                   ) : (
-                    todayPayments.map((payment) => (
+                    recentActivity.map((payment, index) => (
                       <div
-                        key={payment.id}
+                        key={`${payment.title}-${payment.time}-${index}`}
                         className="rounded-2xl border border-sand bg-cream px-4 py-4"
                       >
                         <div className="flex items-center gap-3">
