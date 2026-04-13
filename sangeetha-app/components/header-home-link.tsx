@@ -8,7 +8,7 @@ export function HeaderHomeLink() {
     <Link
       href="/"
       aria-label="Go to home"
-      className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/15 text-white transition hover:bg-white/20"
+      className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-white/92 text-brand shadow-sm transition hover:bg-white"
     >
       <House className="h-5 w-5" />
     </Link>

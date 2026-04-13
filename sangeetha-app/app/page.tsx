@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { LogOut, PackageCheck, ReceiptText, Search, ShoppingBag, SunMedium } from "lucide-react";
 import { BigButton } from "@/components/big-button";
-import { HeaderDate } from "@/components/header-date";
+import { PageBrand } from "@/components/page-brand";
 import { clearWorkerSession, useRequireWorkerSession } from "@/lib/session";
 
 export default function HomePage() {
@@ -17,14 +17,7 @@ export default function HomePage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-6">
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
-              Sangeetha
-            </p>
-            <div className="mt-2">
-              <HeaderDate />
-            </div>
-          </div>
+          <PageBrand />
           <p className="mt-3 text-base leading-6 text-white/85">
             Choose one simple action.
           </p>
@@ -36,7 +29,7 @@ export default function HomePage() {
         <div className="mt-5 space-y-4">
           <Link
             href="/orders/new"
-            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-accent px-5 py-4 text-xl font-bold text-ink shadow-md"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl bg-accent px-5 py-4 text-xl font-bold text-white shadow-md"
           >
             <ShoppingBag className="h-6 w-6" />
             New Order

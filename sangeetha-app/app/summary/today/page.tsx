@@ -10,8 +10,7 @@ import {
   Truck,
   Wallet,
 } from "lucide-react";
-import { HeaderDate } from "@/components/header-date";
-import { HeaderHomeLink } from "@/components/header-home-link";
+import { PageBrand } from "@/components/page-brand";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
 import { formatCurrency } from "@/lib/utils";
@@ -391,17 +390,7 @@ export default function DashboardPage() {
     <main className="flex min-h-screen items-center justify-center px-4 py-6">
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-brand px-5 py-6 text-white">
-          <div className="mb-2 flex items-start gap-3">
-            <HeaderHomeLink />
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/80">
-                Sangeetha
-              </p>
-              <div className="mt-2">
-                <HeaderDate />
-              </div>
-            </div>
-          </div>
+          <PageBrand showHome />
           <h1 className="mt-2 text-3xl font-bold leading-tight">Dashboard</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
             View {filterInfo.label.toLowerCase()} and total business numbers.

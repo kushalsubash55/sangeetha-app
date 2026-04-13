@@ -9,11 +9,11 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        cream: "#F7F1E8",
-        ink: "#1F2937",
-        brand: "#0F766E",
-        sand: "#E7D8C9",
-        accent: "#F59E0B",
+        cream: "#F4FAFF",
+        ink: "#16324F",
+        brand: "#0C6FD0",
+        sand: "#D7E8F8",
+        accent: "#24A4F4",
       },
     },
   },

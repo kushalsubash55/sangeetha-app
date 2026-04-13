@@ -1,0 +1,32 @@
+"use client";
+
+import Image from "next/image";
+import { HeaderDate } from "@/components/header-date";
+import { HeaderHomeLink } from "@/components/header-home-link";
+
+type PageBrandProps = {
+  showHome?: boolean;
+};
+
+export function PageBrand({ showHome = false }: PageBrandProps) {
+  return (
+    <div className="mb-2 flex items-start gap-3">
+      {showHome ? <HeaderHomeLink /> : null}
+      <div className="min-w-0 flex-1">
+        <div className="inline-flex max-w-[220px] rounded-2xl bg-white/92 px-3 py-2 shadow-sm">
+          <Image
+            src="/brand/sangeetha-logo.png"
+            alt="Sangeetha"
+            width={220}
+            height={62}
+            className="h-auto w-full"
+            priority
+          />
+        </div>
+        <div className="mt-2">
+          <HeaderDate />
+        </div>
+      </div>
+    </div>
+  );
+}
