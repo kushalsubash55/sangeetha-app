@@ -48,12 +48,12 @@ export async function POST(request: Request) {
   const messageLines = [
     "Payment Received",
     "",
-    `Bill Number: ${body.billNumber}`,
+    `Bill: ${body.billNumber}`,
     `Customer: ${body.customerName}`,
-    `Amount Received Now: ${formatCurrency(Number(body.amountReceivedNow || 0))}`,
-    `Payment Mode: ${formatPaymentMode(body.paymentMode)}`,
-    `Pending Amount: ${formatCurrency(Number(body.pendingAmountAfterPayment || 0))}`,
-    `Worker ID: ${body.workerIdentity}`,
+    `Received: ${formatCurrency(Number(body.amountReceivedNow || 0))}`,
+    `Mode: ${formatPaymentMode(body.paymentMode)}`,
+    `Pending: ${formatCurrency(Number(body.pendingAmountAfterPayment || 0))}`,
+    `Worker: ${body.workerIdentity}`,
     `Time: ${body.timestamp}`,
   ];
 
