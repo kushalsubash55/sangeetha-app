@@ -12,9 +12,10 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatUiDate } from "@/lib/utils";
 
 type OrderResult = {
   id: string;
@@ -52,6 +53,8 @@ function DetailRow({
 
 function SearchOrderPageContent() {
   const { isChecking } = useRequireWorkerSession();
+  const { t } = useTranslation();
+  const statusLabel = useStatusLabel();
   const searchParams = useSearchParams();
   const billFromUrl = searchParams.get("bill") ?? "";
   const [billNumber, setBillNumber] = useState("");
@@ -68,7 +71,7 @@ function SearchOrderPageContent() {
     setTotalPaid(0);
 
     if (!rawBillNumber.trim()) {
-      setErrorMessage("Enter bill number.");
+      setErrorMessage(t("searchBill.enterBillNumber"));
       return;
     }
 
@@ -86,12 +89,12 @@ function SearchOrderPageContent() {
         .maybeSingle<OrderResult>();
 
       if (orderError) {
-        setErrorMessage(orderError.message || "Could not search order.");
+        setErrorMessage(orderError.message || t("searchBill.couldNotSearchOrder"));
         return;
       }
 
       if (!order) {
-        setNotFoundMessage("Bill number not found.");
+        setNotFoundMessage(t("searchBill.billNotFound"));
         return;
       }
 
@@ -102,7 +105,7 @@ function SearchOrderPageContent() {
         .returns<PaymentRow[]>();
 
       if (paymentsError) {
-        setErrorMessage(paymentsError.message || "Could not load payment details.");
+        setErrorMessage(paymentsError.message || t("searchBill.couldNotLoadPayments"));
         return;
       }
 
@@ -113,7 +116,7 @@ function SearchOrderPageContent() {
     } catch (error) {
       console.error("Order search failed", error);
       setErrorMessage(
-        error instanceof Error ? error.message : "Something went wrong. Try again."
+        error instanceof Error ? error.message : t("searchBill.saveFailed")
       );
     } finally {
       setIsSearching(false);
@@ -143,17 +146,17 @@ function SearchOrderPageContent() {
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">Search Bill</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight">{t("searchBill.title")}</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            Enter bill number and see order details.
+            {t("searchBill.subtitle")}
           </p>
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSearch}>
           <InputField
-            label="Bill Number"
+            label={t("common.billNumber")}
             name="billNumber"
-            placeholder="Enter bill number"
+            placeholder={t("searchBill.billPlaceholder")}
             value={billNumber}
             onChange={(event) => setBillNumber(event.target.value)}
             icon={<ReceiptText className="h-6 w-6" />}
@@ -173,27 +176,29 @@ function SearchOrderPageContent() {
 
           <BigButton type="submit" disabled={isSearching} className={isSearching ? "opacity-70" : ""}>
             <Search className="h-6 w-6" />
-            {isSearching ? "Searching..." : "Search"}
+            {isSearching ? t("common.searching") : t("common.search")}
           </BigButton>
         </form>
 
         {result ? (
           <div className="mt-5 space-y-3">
             <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
-              <p className="text-base font-semibold text-ink">Order Found</p>
-              <p className="mt-1 text-2xl font-bold text-brand">Bill {result.bill_number}</p>
+              <p className="text-base font-semibold text-ink">{t("searchBill.orderFound")}</p>
+              <p className="mt-1 text-2xl font-bold text-brand">
+                {t("common.billWithNumber", { billNumber: result.bill_number })}
+              </p>
             </div>
 
-            <DetailRow label="Bill Number" value={result.bill_number} />
-            <DetailRow label="Customer Name" value={result.customer_name} />
-            <DetailRow label="Received Date" value={result.received_date} />
-            <DetailRow label="Ready Date" value={result.ready_date || "Not set"} />
-            <DetailRow label="Total Amount" value={formatCurrency(result.total_amount)} />
-            <DetailRow label="Advance Paid" value={formatCurrency(result.amount_paid)} />
-            <DetailRow label="Total Paid" value={formatCurrency(totalPaid)} />
-            <DetailRow label="Balance Pending" value={formatCurrency(result.amount_pending)} />
-            <DetailRow label="Status" value={result.status} />
-            <DetailRow label="Notes" value={result.notes || "No notes"} />
+            <DetailRow label={t("common.billNumber")} value={result.bill_number} />
+            <DetailRow label={t("common.customerName")} value={result.customer_name} />
+            <DetailRow label={t("common.receivedDate")} value={formatUiDate(result.received_date)} />
+            <DetailRow label={t("common.readyDate")} value={result.ready_date ? formatUiDate(result.ready_date) : t("common.notSet")} />
+            <DetailRow label={t("common.totalAmount")} value={formatCurrency(result.total_amount)} />
+            <DetailRow label={t("common.advancePaid")} value={formatCurrency(result.amount_paid)} />
+            <DetailRow label={t("common.totalPaid")} value={formatCurrency(totalPaid)} />
+            <DetailRow label={t("common.balancePending")} value={formatCurrency(result.amount_pending)} />
+            <DetailRow label={t("common.status")} value={statusLabel(result.status)} />
+            <DetailRow label={t("common.notes")} value={result.notes || t("common.noNotes")} />
           </div>
         ) : null}
 
@@ -203,7 +208,7 @@ function SearchOrderPageContent() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back
+            {t("common.back")}
           </Link>
           {result ? (
             <Link
@@ -211,7 +216,7 @@ function SearchOrderPageContent() {
               className="flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1479dc_0%,#2ca8f5_100%)] px-4 py-4 text-lg font-bold text-white shadow-[0_14px_28px_rgba(20,121,220,0.24)]"
             >
               <ArrowRight className="h-5 w-5" />
-              Delivery
+              {t("common.delivery")}
             </Link>
           ) : (
             <button
@@ -220,13 +225,13 @@ function SearchOrderPageContent() {
               className="flex items-center justify-center gap-2 rounded-2xl bg-[linear-gradient(135deg,#1479dc_0%,#2ca8f5_100%)] px-4 py-4 text-lg font-bold text-white opacity-70 shadow-[0_14px_28px_rgba(20,121,220,0.24)]"
             >
               <ArrowRight className="h-5 w-5" />
-              Delivery
+              {t("common.delivery")}
             </button>
           )}
         </div>
 
         <div className="mt-3 rounded-2xl bg-cream px-4 py-4 text-center text-sm font-semibold text-slate-600">
-          Open Delivery after finding the order.
+          {t("searchBill.deliveryHint")}
         </div>
 
       </section>

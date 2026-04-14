@@ -4,10 +4,12 @@ import Link from "next/link";
 import { LogOut, PackageCheck, ReceiptText, Search, ShoppingBag, SunMedium } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { PageBrand } from "@/components/page-brand";
+import { useTranslation } from "@/lib/i18n";
 import { clearWorkerSession, useRequireWorkerSession } from "@/lib/session";
 
 export default function HomePage() {
   const { isChecking, session } = useRequireWorkerSession();
+  const { t } = useTranslation();
 
   if (isChecking) {
     return null;
@@ -19,7 +21,7 @@ export default function HomePage() {
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand />
           <p className="mt-3 text-sm font-semibold text-white/80">
-            Worker ID: {session?.phone}
+            {t("common.workerId")}: {session?.phone}
           </p>
         </div>
 
@@ -29,35 +31,35 @@ export default function HomePage() {
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#1479dc_0%,#2ca8f5_100%)] px-5 py-4 text-xl font-bold text-white shadow-[0_14px_28px_rgba(20,121,220,0.28)]"
           >
             <ShoppingBag className="h-6 w-6" />
-            New Order
+            {t("home.newOrder")}
           </Link>
           <Link
             href="/orders/search"
             className="flex w-full items-center justify-center gap-3 rounded-2xl bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-4 text-xl font-bold text-white shadow-[0_14px_28px_rgba(20,121,220,0.24)]"
           >
             <Search className="h-6 w-6" />
-            Search Bill
+            {t("home.searchBill")}
           </Link>
           <Link
             href="/delivery"
             className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sand bg-white px-5 py-4 text-xl font-bold text-ink shadow-[0_10px_22px_rgba(22,50,79,0.1)]"
           >
             <ReceiptText className="h-6 w-6" />
-            Delivery / Payment
+            {t("home.deliveryPayment")}
           </Link>
           <Link
             href="/orders/pending"
             className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sand bg-white px-5 py-4 text-xl font-bold text-ink shadow-[0_10px_22px_rgba(22,50,79,0.1)]"
           >
             <PackageCheck className="h-6 w-6" />
-            Pending Orders
+            {t("home.pendingOrders")}
           </Link>
           <Link
             href="/summary/today"
             className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sand bg-white px-5 py-4 text-xl font-bold text-ink shadow-[0_10px_22px_rgba(22,50,79,0.1)]"
           >
             <SunMedium className="h-6 w-6" />
-            Today Summary
+            {t("home.todaySummary")}
           </Link>
         </div>
 
@@ -71,7 +73,7 @@ export default function HomePage() {
             }}
           >
             <LogOut className="h-6 w-6" />
-            Logout
+            {t("common.logout")}
           </BigButton>
         </div>
       </section>

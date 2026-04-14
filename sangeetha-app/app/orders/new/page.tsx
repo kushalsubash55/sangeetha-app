@@ -16,6 +16,7 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { usePaymentModeLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, todayDate } from "@/lib/utils";
 import { useRequireWorkerSession } from "@/lib/session";
@@ -46,6 +47,8 @@ const initialForm: FormState = {
 
 export default function NewOrderPage() {
   const { isChecking } = useRequireWorkerSession();
+  const { t } = useTranslation();
+  const paymentModeLabel = usePaymentModeLabel();
   const [form, setForm] = useState<FormState>(initialForm);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -76,42 +79,42 @@ export default function NewOrderPage() {
     const advancePaid = Number(form.advancePaid || 0);
 
     if (!form.billNumber.trim()) {
-      setErrorMessage("Enter bill number.");
+      setErrorMessage(t("newOrder.enterBillNumber"));
       return;
     }
 
     if (!form.customerName.trim()) {
-      setErrorMessage("Enter customer name.");
+      setErrorMessage(t("newOrder.enterCustomerName"));
       return;
     }
 
     if (!form.receivedDate) {
-      setErrorMessage("Enter date received.");
+      setErrorMessage(t("newOrder.enterReceivedDate"));
       return;
     }
 
     if (!form.totalAmount || Number.isNaN(totalAmount) || totalAmount <= 0) {
-      setErrorMessage("Enter total amount.");
+      setErrorMessage(t("newOrder.enterTotalAmount"));
       return;
     }
 
     if (Number.isNaN(advancePaid) || advancePaid < 0) {
-      setErrorMessage("Enter valid advance paid.");
+      setErrorMessage(t("newOrder.enterValidAdvance"));
       return;
     }
 
     if (advancePaid > totalAmount) {
-      setErrorMessage("Advance cannot be more than total amount.");
+      setErrorMessage(t("newOrder.advanceTooHigh"));
       return;
     }
 
     if (advancePaid > 0 && form.paymentMode === "none") {
-      setErrorMessage("Choose Cash or UPI for advance payment.");
+      setErrorMessage(t("newOrder.chooseCashOrUpi"));
       return;
     }
 
     if (advancePaid === 0 && form.paymentMode !== "none") {
-      setErrorMessage("Choose None if no advance is paid.");
+      setErrorMessage(t("newOrder.chooseNone"));
       return;
     }
 
@@ -139,11 +142,11 @@ export default function NewOrderPage() {
 
       if (orderError) {
         if (orderError.code === "23505") {
-          setErrorMessage("This bill number already exists.");
+          setErrorMessage(t("newOrder.duplicateBill"));
           return;
         }
 
-        setErrorMessage(orderError.message || "Could not save order.");
+        setErrorMessage(orderError.message || t("newOrder.couldNotSaveOrder"));
         return;
       }
 
@@ -157,7 +160,7 @@ export default function NewOrderPage() {
         });
 
         if (paymentError) {
-          setErrorMessage(paymentError.message || "Order saved, but payment was not saved.");
+          setErrorMessage(paymentError.message || t("newOrder.orderSavedPaymentMissing"));
           return;
         }
       }
@@ -175,7 +178,10 @@ export default function NewOrderPage() {
       });
 
       setSuccessMessage(
-        `Order saved. Bill ${savedOrder.bill_number}. Pending ${formatCurrency(savedOrder.amount_pending)}.`
+        t("newOrder.orderSaved", {
+          billNumber: savedOrder.bill_number,
+          pending: formatCurrency(savedOrder.amount_pending),
+        })
       );
       setForm({
         ...initialForm,
@@ -184,7 +190,7 @@ export default function NewOrderPage() {
     } catch (error) {
       console.error("New order save failed", error);
       setErrorMessage(
-        error instanceof Error ? error.message : "Something went wrong. Try again."
+        error instanceof Error ? error.message : t("newOrder.saveFailed")
       );
     } finally {
       setIsSaving(false);
@@ -200,41 +206,41 @@ export default function NewOrderPage() {
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">New Order</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight">{t("newOrder.title")}</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            Fill the bill details and save immediately.
+            {t("newOrder.subtitle")}
           </p>
         </div>
 
         <div className="mt-5 rounded-[22px] bg-cream px-4 py-4 text-center">
-          <p className="text-base font-semibold text-ink">Pending Amount</p>
+          <p className="text-base font-semibold text-ink">{t("common.pendingAmount")}</p>
           <p className="mt-1 text-3xl font-bold text-brand">{pendingPreview}</p>
           <p className="mt-2 text-sm leading-6 text-slate-600">
-            Status will be saved as RECEIVED.
+            {t("newOrder.statusHint")}
           </p>
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <InputField
-            label="Bill Number"
+            label={t("common.billNumber")}
             name="billNumber"
-            placeholder="Enter bill number"
+            placeholder={t("searchBill.billPlaceholder")}
             value={form.billNumber}
             onChange={(event) => updateField("billNumber", event.target.value)}
             icon={<ReceiptText className="h-6 w-6" />}
           />
 
           <InputField
-            label="Customer Name"
+            label={t("common.customerName")}
             name="customerName"
-            placeholder="Enter customer name"
+            placeholder={t("newOrder.customerPlaceholder")}
             value={form.customerName}
             onChange={(event) => updateField("customerName", event.target.value)}
             icon={<FileText className="h-6 w-6" />}
           />
 
           <InputField
-            label="Date Received"
+            label={t("common.receivedDate")}
             name="receivedDate"
             type="date"
             value={form.receivedDate}
@@ -243,7 +249,7 @@ export default function NewOrderPage() {
           />
 
           <InputField
-            label="Ready Date"
+            label={t("common.readyDate")}
             name="readyDate"
             type="date"
             value={form.readyDate}
@@ -252,9 +258,9 @@ export default function NewOrderPage() {
           />
 
           <InputField
-            label="Total Amount"
+            label={t("common.totalAmount")}
             name="totalAmount"
-            placeholder="Enter total amount"
+            placeholder={t("newOrder.totalAmountPlaceholder")}
             type="number"
             min="0"
             step="1"
@@ -265,9 +271,9 @@ export default function NewOrderPage() {
           />
 
           <InputField
-            label="Advance Paid"
+            label={t("common.advancePaid")}
             name="advancePaid"
-            placeholder="Enter advance paid"
+            placeholder={t("newOrder.advancePlaceholder")}
             type="number"
             min="0"
             step="1"
@@ -278,12 +284,12 @@ export default function NewOrderPage() {
           />
 
           <div>
-            <p className="mb-2 text-lg font-semibold text-ink">Payment Mode</p>
+            <p className="mb-2 text-lg font-semibold text-ink">{t("common.paymentMode")}</p>
             <div className="grid grid-cols-3 gap-3">
               {[
-                { label: "Cash", value: "cash" },
-                { label: "UPI", value: "upi" },
-                { label: "None", value: "none" },
+                { label: paymentModeLabel("cash"), value: "cash" },
+                { label: paymentModeLabel("upi"), value: "upi" },
+                { label: paymentModeLabel("none"), value: "none" },
               ].map((option) => {
                 const active = form.paymentMode === option.value;
 
@@ -307,19 +313,19 @@ export default function NewOrderPage() {
 
           <label className="block">
             <span className="mb-2 block text-lg font-semibold text-ink">
-              Notes (Optional)
+              {t("newOrder.notesOptional")}
             </span>
             <div className="rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm">
               <div className="mb-3 flex items-center gap-3 text-brand">
                 <NotebookPen className="h-6 w-6" />
                 <span className="text-base font-semibold text-slate-500">
-                  Tailoring notes
+                  {t("newOrder.notesHelper")}
                 </span>
               </div>
               <textarea
                 name="notes"
                 rows={4}
-                placeholder="Write short note"
+                placeholder={t("newOrder.notesPlaceholder")}
                 value={form.notes}
                 onChange={(event) => updateField("notes", event.target.value)}
                 className="w-full resize-none border-0 bg-transparent text-lg text-ink outline-none placeholder:text-slate-400"
@@ -344,7 +350,7 @@ export default function NewOrderPage() {
 
           <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
             <Save className="h-6 w-6" />
-            {isSaving ? "Saving..." : "Save Order"}
+            {isSaving ? t("common.saving") : t("common.saveOrder")}
           </BigButton>
         </form>
 
@@ -354,7 +360,7 @@ export default function NewOrderPage() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back
+            {t("common.back")}
           </Link>
         </div>
       </section>

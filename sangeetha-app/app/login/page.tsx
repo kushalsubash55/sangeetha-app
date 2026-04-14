@@ -6,10 +6,12 @@ import { LogIn, Phone, ShieldCheck } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { useTranslation } from "@/lib/i18n";
 import { getWorkerSession, setWorkerSession } from "@/lib/session";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -27,12 +29,12 @@ export default function LoginPage() {
     setErrorMessage("");
 
     if (!phone.trim()) {
-      setErrorMessage("Enter phone number.");
+      setErrorMessage(t("login.enterPhone"));
       return;
     }
 
     if (!pin.trim()) {
-      setErrorMessage("Enter PIN.");
+      setErrorMessage(t("login.enterPin"));
       return;
     }
 
@@ -50,27 +52,27 @@ export default function LoginPage() {
         <div className="mb-6 rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand />
           <h1 className="mt-2 text-3xl font-bold leading-tight">
-            Worker Login
+            {t("login.title")}
           </h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            Enter phone number and PIN. Keep it simple and fast at the counter.
+            {t("login.subtitle")}
           </p>
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <InputField
-            label="Phone Number"
+            label={t("login.phoneNumber")}
             name="phone"
-            placeholder="Enter phone number"
+            placeholder={t("login.phonePlaceholder")}
             type="tel"
             value={phone}
             onChange={(event) => setPhone(event.target.value)}
             icon={<Phone className="h-6 w-6" />}
           />
           <InputField
-            label="4 Digit PIN"
+            label={t("login.pin")}
             name="pin"
-            placeholder="Enter PIN"
+            placeholder={t("login.pinPlaceholder")}
             type="password"
             value={pin}
             onChange={(event) => setPin(event.target.value)}
@@ -83,15 +85,14 @@ export default function LoginPage() {
           ) : null}
           <BigButton type="submit">
             <LogIn className="h-6 w-6" />
-            Login
+            {t("login.button")}
           </BigButton>
         </form>
 
         <div className="mt-5 rounded-[22px] bg-cream px-4 py-4 text-center">
-          <p className="text-base font-semibold text-ink">Version 1</p>
+          <p className="text-base font-semibold text-ink">{t("login.version")}</p>
           <p className="mt-1 text-sm leading-6 text-slate-600">
-            Orders, delivery, payments, and owner reports will be added screen by
-            screen.
+            {t("login.versionNote")}
           </p>
         </div>
       </section>

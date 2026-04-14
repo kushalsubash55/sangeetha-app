@@ -15,9 +15,10 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { usePaymentModeLabel, useStatusLabel, useTranslation } from "@/lib/i18n";
 import { useRequireWorkerSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatUiDateTime } from "@/lib/utils";
 
 type PaymentMode = "cash" | "upi";
 
@@ -71,6 +72,9 @@ function isDeliveredOrder(order: OrderResult | null) {
 
 function DeliveryPageContent() {
   const { isChecking, session } = useRequireWorkerSession();
+  const { t } = useTranslation();
+  const statusLabel = useStatusLabel();
+  const paymentModeLabel = usePaymentModeLabel();
   const router = useRouter();
   const searchParams = useSearchParams();
   const billFromUrl = searchParams.get("bill") ?? "";
@@ -115,12 +119,12 @@ function DeliveryPageContent() {
         .maybeSingle<OrderResult>();
 
       if (orderError) {
-        setErrorMessage(orderError.message || "Could not load order.");
+        setErrorMessage(orderError.message || t("delivery.couldNotLoadOrder"));
         return;
       }
 
       if (!foundOrder) {
-        setNotFoundMessage("Bill number not found.");
+        setNotFoundMessage(t("delivery.billNotFound"));
         return;
       }
 
@@ -131,7 +135,7 @@ function DeliveryPageContent() {
         .returns<PaymentRow[]>();
 
       if (paymentsError) {
-        setErrorMessage(paymentsError.message || "Could not load payment history.");
+        setErrorMessage(paymentsError.message || t("delivery.couldNotLoadHistory"));
         return;
       }
 
@@ -144,7 +148,7 @@ function DeliveryPageContent() {
     } catch (error) {
       console.error("Delivery page load failed", error);
       setErrorMessage(
-        error instanceof Error ? error.message : "Something went wrong. Try again."
+        error instanceof Error ? error.message : t("delivery.saveFailed")
       );
     } finally {
       setIsLoading(false);
@@ -155,7 +159,7 @@ function DeliveryPageContent() {
     event.preventDefault();
 
     if (!billNumber.trim()) {
-      setErrorMessage("Enter bill number.");
+      setErrorMessage(t("delivery.enterBillNumber"));
       return;
     }
 
@@ -169,24 +173,24 @@ function DeliveryPageContent() {
     setWarningMessage("");
 
     if (!order) {
-      setErrorMessage("Search bill number first.");
+      setErrorMessage(t("delivery.searchFirst"));
       return;
     }
 
     const receivedNow = Number(amountReceivedNow || 0);
 
     if (Number.isNaN(receivedNow) || receivedNow < 0) {
-      setErrorMessage("Enter valid amount.");
+      setErrorMessage(t("delivery.enterValidAmount"));
       return;
     }
 
     if (receivedNow > order.amount_pending) {
-      setErrorMessage("Payment cannot be more than pending balance.");
+      setErrorMessage(t("delivery.amountTooHigh"));
       return;
     }
 
     if (receivedNow === 0) {
-      setErrorMessage("Enter payment amount.");
+      setErrorMessage(t("delivery.enterPaymentAmount"));
       return;
     }
 
@@ -201,7 +205,7 @@ function DeliveryPageContent() {
       });
 
       if (error) {
-        setErrorMessage(error.message || "Could not save payment.");
+        setErrorMessage(error.message || t("delivery.couldNotSavePayment"));
         return;
       }
 
@@ -210,7 +214,7 @@ function DeliveryPageContent() {
         : (data as DeliveryPaymentResult | null);
 
       if (!paymentResult) {
-        setErrorMessage("Could not save payment.");
+        setErrorMessage(t("delivery.couldNotSavePayment"));
         return;
       }
 
@@ -237,27 +241,21 @@ function DeliveryPageContent() {
             amountReceivedNow: receivedNow,
             paymentMode,
             pendingAmountAfterPayment: Number(paymentResult.amount_pending),
-            workerIdentity: session?.phone || "Unknown worker",
-            timestamp: new Date().toLocaleString("en-IN", {
-              day: "2-digit",
-              month: "short",
-              year: "numeric",
-              hour: "numeric",
-              minute: "2-digit",
-            }),
+            workerIdentity: session?.phone || t("common.unknownWorker"),
+            timestamp: formatUiDateTime(new Date()),
           }),
         });
 
         if (!notificationResponse.ok) {
-          setWarningMessage("Payment saved, but owner notification could not be sent.");
+          setWarningMessage(t("delivery.notificationFailed"));
         }
       } catch (error) {
         console.error("Telegram notification failed", error);
-        setWarningMessage("Payment saved, but owner notification could not be sent.");
+        setWarningMessage(t("delivery.notificationFailed"));
       }
 
       if (Number(paymentResult.amount_pending) === 0) {
-        setSuccessMessage("Bill is delivered. Returning to home page...");
+        setSuccessMessage(t("delivery.deliveredRedirect"));
         window.setTimeout(() => {
           router.push("/");
         }, 1200);
@@ -265,12 +263,15 @@ function DeliveryPageContent() {
       }
 
       setSuccessMessage(
-        `Payment saved. Total paid ${formatCurrency(Number(paymentResult.total_paid))}. Pending ${formatCurrency(Number(paymentResult.amount_pending))}.`
+        t("delivery.paymentSaved", {
+          totalPaid: formatCurrency(Number(paymentResult.total_paid)),
+          pending: formatCurrency(Number(paymentResult.amount_pending)),
+        })
       );
     } catch (error) {
       console.error("Delivery save failed", error);
       setErrorMessage(
-        error instanceof Error ? error.message : "Something went wrong. Try again."
+        error instanceof Error ? error.message : t("delivery.saveFailed")
       );
     } finally {
       setIsSaving(false);
@@ -286,24 +287,24 @@ function DeliveryPageContent() {
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">Delivery / Payment</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight">{t("delivery.title")}</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            Search bill, take payment, mark delivered.
+            {t("delivery.subtitle")}
           </p>
         </div>
 
         <form className="mt-5 space-y-4" onSubmit={handleSearch}>
           <InputField
-            label="Bill Number"
+            label={t("common.billNumber")}
             name="billNumber"
-            placeholder="Enter bill number"
+            placeholder={t("delivery.billPlaceholder")}
             value={billNumber}
             onChange={(event) => setBillNumber(event.target.value)}
             icon={<ReceiptText className="h-6 w-6" />}
           />
           <BigButton type="submit" disabled={isLoading} className={isLoading ? "opacity-70" : ""}>
             <Search className="h-6 w-6" />
-            {isLoading ? "Searching..." : "Open Bill"}
+            {isLoading ? t("common.searching") : t("common.openBill")}
           </BigButton>
         </form>
 
@@ -337,32 +338,34 @@ function DeliveryPageContent() {
         {order ? (
           <div className="mt-5 space-y-4">
             <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
-              <p className="text-base font-semibold text-ink">Bill {order.bill_number}</p>
+              <p className="text-base font-semibold text-ink">
+                {t("common.billWithNumber", { billNumber: order.bill_number })}
+              </p>
               <p className="mt-1 text-2xl font-bold text-brand">{order.customer_name}</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Full payment will mark this bill as delivered automatically.
+                {t("delivery.fullPaymentHint")}
               </p>
             </div>
 
-            <DetailRow label="Bill Number" value={order.bill_number} />
-            <DetailRow label="Customer Name" value={order.customer_name} />
-            <DetailRow label="Total Amount" value={formatCurrency(order.total_amount)} />
-            <DetailRow label="Advance Paid" value={formatCurrency(order.amount_paid)} />
-            <DetailRow label="Total Paid So Far" value={formatCurrency(totalPaid)} />
-            <DetailRow label="Balance Pending" value={formatCurrency(order.amount_pending)} />
-            <DetailRow label="Current Status" value={order.status} />
-            <DetailRow label="Notes" value={order.notes || "No notes"} />
+            <DetailRow label={t("common.billNumber")} value={order.bill_number} />
+            <DetailRow label={t("common.customerName")} value={order.customer_name} />
+            <DetailRow label={t("common.totalAmount")} value={formatCurrency(order.total_amount)} />
+            <DetailRow label={t("common.advancePaid")} value={formatCurrency(order.amount_paid)} />
+            <DetailRow label={t("common.totalPaidSoFar")} value={formatCurrency(totalPaid)} />
+            <DetailRow label={t("common.balancePending")} value={formatCurrency(order.amount_pending)} />
+            <DetailRow label={t("common.currentStatus")} value={statusLabel(order.status)} />
+            <DetailRow label={t("common.notes")} value={order.notes || t("common.noNotes")} />
 
             {delivered ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center text-base font-semibold text-emerald-700">
-                This bill is already delivered.
+                {t("delivery.alreadyDelivered")}
               </div>
             ) : (
               <form className="space-y-4" onSubmit={handleSave}>
                 <InputField
-                  label="Amount Received Now"
+                  label={t("delivery.amountReceivedNow")}
                   name="amountReceivedNow"
-                  placeholder="Enter amount"
+                  placeholder={t("delivery.amountPlaceholder")}
                   type="number"
                   min="0"
                   step="1"
@@ -373,11 +376,11 @@ function DeliveryPageContent() {
                 />
 
                 <div>
-                  <p className="mb-2 text-lg font-semibold text-ink">Payment Mode</p>
+                  <p className="mb-2 text-lg font-semibold text-ink">{t("common.paymentMode")}</p>
                   <div className="grid grid-cols-2 gap-3">
                     {[
-                      { label: "Cash", value: "cash" },
-                      { label: "UPI", value: "upi" },
+                      { label: paymentModeLabel("cash"), value: "cash" },
+                      { label: paymentModeLabel("upi"), value: "upi" },
                     ].map((option) => {
                       const active = paymentMode === option.value;
 
@@ -401,7 +404,7 @@ function DeliveryPageContent() {
 
                 <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
                   <Truck className="h-6 w-6" />
-                  {isSaving ? "Saving..." : "Save Payment"}
+                  {isSaving ? t("common.saving") : t("common.savePayment")}
                 </BigButton>
               </form>
             )}
@@ -414,7 +417,7 @@ function DeliveryPageContent() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back
+            {t("common.back")}
           </Link>
         </div>
       </section>

@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PageBrand } from "@/components/page-brand";
+import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatUiDate } from "@/lib/utils";
 
 type OrderResult = {
   id: string;
@@ -45,6 +46,8 @@ function DetailRow({
 
 export default function SummaryBillDetailsPage() {
   const { isChecking } = useRequireWorkerSession();
+  const { t } = useTranslation();
+  const statusLabel = useStatusLabel();
   const params = useParams<{ billNumber: string }>();
   const billNumber = decodeURIComponent(params.billNumber);
 
@@ -74,12 +77,12 @@ export default function SummaryBillDetailsPage() {
           .maybeSingle<OrderResult>();
 
         if (orderError) {
-          setErrorMessage(orderError.message || "Could not load bill.");
+          setErrorMessage(orderError.message || t("billDetails.couldNotLoad"));
           return;
         }
 
         if (!orderData) {
-          setErrorMessage("Bill not found.");
+          setErrorMessage(t("billDetails.billNotFound"));
           return;
         }
 
@@ -90,7 +93,7 @@ export default function SummaryBillDetailsPage() {
           .returns<PaymentRow[]>();
 
         if (paymentsError) {
-          setErrorMessage(paymentsError.message || "Could not load payment details.");
+          setErrorMessage(paymentsError.message || t("billDetails.couldNotLoadPayments"));
           return;
         }
 
@@ -100,7 +103,7 @@ export default function SummaryBillDetailsPage() {
         setTotalPaid(paid);
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Something went wrong. Try again."
+          error instanceof Error ? error.message : t("billDetails.saveFailed")
         );
       } finally {
         setIsLoading(false);
@@ -119,15 +122,15 @@ export default function SummaryBillDetailsPage() {
       <section className="mx-auto w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">Bill Details</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight">{t("billDetails.title")}</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            Read-only view for bill {billNumber}.
+            {t("billDetails.subtitle", { billNumber })}
           </p>
         </div>
 
         {isLoading ? (
           <div className="mt-5 rounded-[22px] bg-cream px-4 py-6 text-center text-base font-semibold text-slate-600">
-            Loading bill details...
+            {t("billDetails.loading")}
           </div>
         ) : errorMessage ? (
           <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
@@ -136,20 +139,22 @@ export default function SummaryBillDetailsPage() {
         ) : order ? (
           <div className="mt-5 space-y-3">
             <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
-              <p className="text-base font-semibold text-ink">Bill Found</p>
-              <p className="mt-1 text-2xl font-bold text-brand">Bill {order.bill_number}</p>
+              <p className="text-base font-semibold text-ink">{t("billDetails.billFound")}</p>
+              <p className="mt-1 text-2xl font-bold text-brand">
+                {t("common.billWithNumber", { billNumber: order.bill_number })}
+              </p>
             </div>
 
-            <DetailRow label="Bill Number" value={order.bill_number} />
-            <DetailRow label="Customer Name" value={order.customer_name} />
-            <DetailRow label="Received Date" value={order.received_date} />
-            <DetailRow label="Ready Date" value={order.ready_date || "Not set"} />
-            <DetailRow label="Total Amount" value={formatCurrency(order.total_amount)} />
-            <DetailRow label="Advance Paid" value={formatCurrency(order.amount_paid)} />
-            <DetailRow label="Total Paid" value={formatCurrency(totalPaid)} />
-            <DetailRow label="Balance Pending" value={formatCurrency(order.amount_pending)} />
-            <DetailRow label="Status" value={order.status} />
-            <DetailRow label="Notes" value={order.notes || "No notes"} />
+            <DetailRow label={t("common.billNumber")} value={order.bill_number} />
+            <DetailRow label={t("common.customerName")} value={order.customer_name} />
+            <DetailRow label={t("common.receivedDate")} value={formatUiDate(order.received_date)} />
+            <DetailRow label={t("common.readyDate")} value={order.ready_date ? formatUiDate(order.ready_date) : t("common.notSet")} />
+            <DetailRow label={t("common.totalAmount")} value={formatCurrency(order.total_amount)} />
+            <DetailRow label={t("common.advancePaid")} value={formatCurrency(order.amount_paid)} />
+            <DetailRow label={t("common.totalPaid")} value={formatCurrency(totalPaid)} />
+            <DetailRow label={t("common.balancePending")} value={formatCurrency(order.amount_pending)} />
+            <DetailRow label={t("common.status")} value={statusLabel(order.status)} />
+            <DetailRow label={t("common.notes")} value={order.notes || t("common.noNotes")} />
           </div>
         ) : null}
 
@@ -159,7 +164,7 @@ export default function SummaryBillDetailsPage() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back
+            {t("common.back")}
           </Link>
         </div>
       </section>

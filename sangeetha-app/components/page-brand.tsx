@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { HeaderDate } from "@/components/header-date";
 import { HeaderHomeLink } from "@/components/header-home-link";
+import { LanguageToggle } from "@/components/language-toggle";
 
 type PageBrandProps = {
   showHome?: boolean;
@@ -26,8 +27,9 @@ export function PageBrand({ showHome = false }: PageBrandProps) {
         </div>
         {showHome ? <HeaderHomeLink /> : null}
       </div>
-      <div className="mt-2">
+      <div className="mt-2 flex items-center justify-between gap-3">
         <HeaderDate />
+        <LanguageToggle />
       </div>
     </div>
   );

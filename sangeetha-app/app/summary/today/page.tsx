@@ -14,9 +14,15 @@ import {
   Wallet,
 } from "lucide-react";
 import { PageBrand } from "@/components/page-brand";
+import {
+  formatWorkerIdentity,
+  usePaymentModeLabel,
+  useStatusLabel,
+  useTranslation,
+} from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, formatUiDate, formatUiDateTime } from "@/lib/utils";
 
 type OrderRow = {
   id: string;
@@ -141,18 +147,19 @@ function endOfDay(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
 }
 
-function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: string) {
+function getFilterInfo(
+  filter: FilterKey,
+  customFromDate: string,
+  customToDate: string,
+  t: (key: string, params?: Record<string, string | number>) => string
+) {
   const now = new Date();
   const todayStart = startOfDay(now);
 
   if (filter === "today") {
     return {
-      label: "Today",
-      showing: now.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      label: t("dashboard.today"),
+      showing: formatUiDate(now),
       start: todayStart,
       end: endOfDay(now),
       dates: [formatDateOnly(now)],
@@ -164,12 +171,8 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
     yesterday.setDate(yesterday.getDate() - 1);
 
     return {
-      label: "Yesterday",
-      showing: yesterday.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      }),
+      label: t("dashboard.yesterday"),
+      showing: formatUiDate(yesterday),
       start: yesterday,
       end: endOfDay(yesterday),
       dates: [formatDateOnly(yesterday)],
@@ -188,16 +191,8 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
     }
 
     return {
-      label: "Last 7 Days",
-      showing: `${start.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })} - ${now.toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })}`,
+      label: t("dashboard.last7"),
+      showing: `${formatUiDate(start)} - ${formatUiDate(now)}`,
       start,
       end: endOfDay(now),
       dates,
@@ -215,11 +210,11 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
     }
 
     return {
-      label: "This Month",
-      showing: now.toLocaleDateString("en-IN", {
+      label: t("dashboard.thisMonth"),
+      showing: new Intl.DateTimeFormat("en-US", {
         month: "short",
         year: "numeric",
-      }),
+      }).format(now),
       start,
       end: endOfDay(now),
       dates,
@@ -239,40 +234,19 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
   }
 
   return {
-    label: `${safeStart.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })} to ${safeEndBase.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })}`,
-    showing: `${safeStart.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })} - ${safeEndBase.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })}`,
+    label: `${formatUiDate(safeStart)} ${t("common.to").toLowerCase()} ${formatUiDate(safeEndBase)}`,
+    showing: `${formatUiDate(safeStart)} - ${formatUiDate(safeEndBase)}`,
     start: startOfDay(safeStart),
     end: endOfDay(safeEndBase),
     dates,
   };
 }
 
-function formatWorkerId(workerId: string | null) {
-  if (!workerId) {
-    return null;
-  }
-
-  return `Worker ${workerId.slice(0, 8)}`;
-}
-
 export default function DashboardPage() {
   const { isChecking } = useRequireWorkerSession();
+  const { t } = useTranslation();
+  const statusLabel = useStatusLabel();
+  const paymentModeLabel = usePaymentModeLabel();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [payments, setPayments] = useState<PaymentRow[]>([]);
   const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
@@ -318,7 +292,7 @@ export default function DashboardPage() {
         const firstError = ordersResult.error || paymentsResult.error || deliveriesResult.error;
 
         if (firstError) {
-          setErrorMessage(firstError.message || "Could not load dashboard.");
+          setErrorMessage(firstError.message || t("dashboard.couldNotLoad"));
           return;
         }
 
@@ -327,7 +301,7 @@ export default function DashboardPage() {
         setDeliveries(deliveriesResult.data ?? []);
       } catch (error) {
         setErrorMessage(
-          error instanceof Error ? error.message : "Something went wrong. Try again."
+          error instanceof Error ? error.message : t("newOrder.saveFailed")
         );
       } finally {
         setIsLoading(false);
@@ -338,8 +312,8 @@ export default function DashboardPage() {
   }, [isChecking]);
 
   const filterInfo = useMemo(
-    () => getFilterInfo(selectedFilter, customFromDate, customToDate),
-    [selectedFilter, customFromDate, customToDate]
+    () => getFilterInfo(selectedFilter, customFromDate, customToDate, t),
+    [selectedFilter, customFromDate, customToDate, t]
   );
 
   const filteredSummary = useMemo<SummaryState>(() => {
@@ -423,15 +397,18 @@ export default function DashboardPage() {
       })
       .map((payment) => ({
         billNumber: payment.orders?.bill_number ?? "-",
-        customerName: payment.orders?.customer_name ?? "No customer name",
-        action: payment.payment_type === "full" ? "Fully Paid" : "Paid",
+        customerName: payment.orders?.customer_name ?? t("common.customerName"),
+        action:
+          payment.payment_type === "full"
+            ? t("dashboard.fullyPaidAction")
+            : t("dashboard.paidAction"),
         amountText: formatCurrency(Number(payment.amount || 0)),
-        paymentModeText: payment.payment_method.toUpperCase(),
+        paymentModeText: paymentModeLabel(payment.payment_method),
         time: payment.payment_date || payment.created_at,
-        workerLabel: formatWorkerId(payment.recorded_by),
+        workerLabel: formatWorkerIdentity(payment.recorded_by),
       }))
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-  }, [filterInfo, payments]);
+  }, [filterInfo, paymentModeLabel, payments, t]);
 
   const filteredCreatedOrdersActivity = useMemo<ActivityEntry[]>(() => {
     return orders
@@ -442,14 +419,14 @@ export default function DashboardPage() {
       .map((order) => ({
         billNumber: order.bill_number,
         customerName: order.customer_name,
-        action: "Created",
+        action: t("dashboard.createdAction"),
         amountText: formatCurrency(Number(order.total_amount || 0)),
         paymentModeText: null,
         time: order.created_at,
-        workerLabel: formatWorkerId(order.created_by),
+        workerLabel: formatWorkerIdentity(order.created_by),
       }))
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-  }, [filterInfo, orders]);
+  }, [filterInfo, orders, t]);
 
   const filteredDeliveredActivity = useMemo<ActivityEntry[]>(() => {
     const deliveredOrderIds = new Set(
@@ -469,15 +446,15 @@ export default function DashboardPage() {
       )
       .map((payment) => ({
         billNumber: payment.orders?.bill_number ?? "-",
-        customerName: payment.orders?.customer_name ?? "No customer name",
-        action: "Fully Paid / Delivered",
+        customerName: payment.orders?.customer_name ?? t("common.customerName"),
+        action: t("dashboard.fullyPaidDeliveredAction"),
         amountText: formatCurrency(Number(payment.amount || 0)),
-        paymentModeText: payment.payment_method.toUpperCase(),
+        paymentModeText: paymentModeLabel(payment.payment_method),
         time: payment.payment_date || payment.created_at,
-        workerLabel: formatWorkerId(payment.recorded_by),
+        workerLabel: formatWorkerIdentity(payment.recorded_by),
       }))
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
-  }, [deliveries, filterInfo, payments]);
+  }, [deliveries, filterInfo, paymentModeLabel, payments, t]);
 
   const openBills = useMemo<OpenBillItem[]>(() => {
     return orders
@@ -551,24 +528,19 @@ export default function DashboardPage() {
                   className="block rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm"
                 >
                   <p className="text-base font-bold text-ink">
-                    Bill {item.billNumber} | {item.customerName}
+                    {t("common.billWithNumber", { billNumber: item.billNumber })} | {item.customerName}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-700">
                     {item.action}
                     {item.amountText ? ` | ${item.amountText}` : ""}
-                    {item.paymentModeText ? ` by ${item.paymentModeText}` : ""}
+                    {item.paymentModeText ? ` | ${t("common.byMode", { mode: item.paymentModeText })}` : ""}
                   </p>
                   <p className="mt-2 text-sm font-semibold text-slate-500">
-                    {new Date(item.time).toLocaleString("en-IN", {
-                      day: "2-digit",
-                      month: "short",
-                      hour: "numeric",
-                      minute: "2-digit",
-                    })}
+                    {formatUiDateTime(item.time)}
                   </p>
                   {item.workerLabel ? (
                     <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
-                      {item.workerLabel}
+                      {item.workerLabel ? t("common.workerShort", { id: item.workerLabel }) : ""}
                     </p>
                   ) : null}
                 </Link>
@@ -589,9 +561,9 @@ export default function DashboardPage() {
       <section className="w-full max-w-sm rounded-[28px] border border-white/70 bg-white/90 p-5 shadow-[0_20px_70px_rgba(31,41,55,0.12)] backdrop-blur">
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand showHome />
-          <h1 className="mt-2 text-3xl font-bold leading-tight">Dashboard</h1>
+          <h1 className="mt-2 text-3xl font-bold leading-tight">{t("dashboard.title")}</h1>
           <p className="mt-3 text-base leading-6 text-white/85">
-            View {filterInfo.label.toLowerCase()} and total business numbers.
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
@@ -604,21 +576,21 @@ export default function DashboardPage() {
         {isLoading ? (
           <div className="mt-5 rounded-[22px] bg-cream px-4 py-6 text-center">
             <SunMedium className="mx-auto h-10 w-10 text-brand" />
-            <p className="mt-3 text-xl font-bold text-ink">Loading</p>
+            <p className="mt-3 text-xl font-bold text-ink">{t("common.loading")}</p>
             <p className="mt-2 text-base leading-6 text-slate-600">
-              Getting dashboard numbers from the database.
+              {t("dashboard.loadingHint")}
             </p>
           </div>
         ) : (
           <>
             <div className="mt-5 rounded-[22px] bg-cream px-4 py-4">
-              <p className="text-base font-bold text-ink">Filter</p>
+              <p className="text-base font-bold text-ink">{t("common.filter")}</p>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 {[
-                  { label: "Today", value: "today" },
-                  { label: "Yesterday", value: "yesterday" },
-                  { label: "Last 7 Days", value: "last7" },
-                  { label: "This Month", value: "month" },
+                  { label: t("dashboard.today"), value: "today" },
+                  { label: t("dashboard.yesterday"), value: "yesterday" },
+                  { label: t("dashboard.last7"), value: "last7" },
+                  { label: t("dashboard.thisMonth"), value: "month" },
                 ].map((option) => {
                   const active = selectedFilter === option.value;
 
@@ -649,14 +621,14 @@ export default function DashboardPage() {
                       : "border-sand bg-white text-ink"
                   }`}
                 >
-                  Custom Date
+                  {t("dashboard.customDate")}
                 </button>
               </div>
 
               {selectedFilter === "custom" ? (
                 <div className="mt-3 space-y-3">
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-slate-700">From</label>
+                    <label className="mb-2 block text-sm font-bold text-slate-700">{t("common.from")}</label>
                     <input
                       type="date"
                       value={customFromDate}
@@ -665,7 +637,7 @@ export default function DashboardPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-2 block text-sm font-bold text-slate-700">To</label>
+                    <label className="mb-2 block text-sm font-bold text-slate-700">{t("common.to")}</label>
                     <input
                       type="date"
                       value={customToDate}
@@ -674,99 +646,99 @@ export default function DashboardPage() {
                     />
                   </div>
                   <p className="text-sm font-semibold text-slate-600">
-                    You can type dates manually or use the calendar.
+                    {t("common.dateTypeHint")}
                   </p>
                 </div>
               ) : null}
 
               <p className="mt-4 text-sm font-semibold text-slate-600">
-                Showing: {filterInfo.showing}
+                {t("common.showing")}: {filterInfo.showing}
               </p>
             </div>
 
             <div className="mt-5 space-y-4">
               <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
-                <p className="text-base font-semibold text-ink">Total Collection</p>
+                <p className="text-base font-semibold text-ink">{t("dashboard.totalCollection")}</p>
                 <p className="mt-1 text-3xl font-bold text-brand">
                   {formatCurrency(filteredSummary.totalCollected)}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-600">
-                  For selected filter
+                  {t("dashboard.selectedFilterHint")}
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard title="Received Today" value={String(filteredSummary.ordersReceived)} />
-                <StatCard title="Delivered Today" value={String(filteredSummary.ordersDelivered)} />
+                <StatCard title={t("dashboard.receivedToday")} value={String(filteredSummary.ordersReceived)} />
+                <StatCard title={t("dashboard.deliveredToday")} value={String(filteredSummary.ordersDelivered)} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard title="Cash" value={formatCurrency(filteredSummary.cashCollected)} />
-                <StatCard title="UPI" value={formatCurrency(filteredSummary.upiCollected)} />
+                <StatCard title={t("common.cash")} value={formatCurrency(filteredSummary.cashCollected)} />
+                <StatCard title={t("common.upi")} value={formatCurrency(filteredSummary.upiCollected)} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard title="Pending Amount" value={formatCurrency(filteredSummary.totalPendingAmount)} />
-                <StatCard title="Open Bills" value={String(filteredSummary.openBillsCount)} />
+                <StatCard title={t("common.pendingAmount")} value={formatCurrency(filteredSummary.totalPendingAmount)} />
+                <StatCard title={t("dashboard.openBills")} value={String(filteredSummary.openBillsCount)} />
               </div>
             </div>
 
             <div className="mt-5 rounded-[22px] bg-white px-4 py-4 shadow-sm">
-              <p className="text-lg font-bold text-ink">Lifetime Summary</p>
+              <p className="text-lg font-bold text-ink">{t("dashboard.lifetimeSummary")}</p>
               <div className="mt-4 grid grid-cols-2 gap-3">
-                <StatCard title="Total Cash" value={formatCurrency(lifetimeSummary.totalCash)} />
-                <StatCard title="Total UPI" value={formatCurrency(lifetimeSummary.totalUpi)} />
+                <StatCard title={t("dashboard.totalCash")} value={formatCurrency(lifetimeSummary.totalCash)} />
+                <StatCard title={t("dashboard.totalUpi")} value={formatCurrency(lifetimeSummary.totalUpi)} />
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <StatCard
-                  title="Total Collected"
+                  title={t("dashboard.totalCollected")}
                   value={formatCurrency(lifetimeSummary.totalCollected)}
                 />
-                <StatCard title="Total Bills" value={String(lifetimeSummary.totalBills)} />
+                <StatCard title={t("dashboard.totalBills")} value={String(lifetimeSummary.totalBills)} />
               </div>
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <StatCard
-                  title="Delivered Bills"
+                  title={t("dashboard.deliveredBills")}
                   value={String(lifetimeSummary.totalDeliveredBills)}
                 />
-                <StatCard title="Open Bills" value={String(lifetimeSummary.totalOpenBills)} />
+                <StatCard title={t("dashboard.openBills")} value={String(lifetimeSummary.totalOpenBills)} />
               </div>
               <div className="mt-3">
                 <StatCard
-                  title="Pending Amount"
+                  title={t("common.pendingAmount")}
                   value={formatCurrency(lifetimeSummary.totalPendingAmount)}
                 />
               </div>
             </div>
 
             <div className="mt-5 rounded-[22px] bg-white px-4 py-4 shadow-sm">
-              <p className="text-lg font-bold text-ink">Recent Activity</p>
+              <p className="text-lg font-bold text-ink">{t("dashboard.recentActivity")}</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
-                Expand any section to see all bills for the selected filter.
+                {t("dashboard.recentActivityHint")}
               </p>
               <div className="mt-4 space-y-3">
                 <ActivitySection
                   sectionKey="payments"
-                  title="Payments for selected filter"
-                  subtitle={`${filteredPaymentsActivity.length} bills`}
+                  title={t("dashboard.paymentsForFilter")}
+                  subtitle={t("common.billsCount", { count: filteredPaymentsActivity.length })}
                   items={filteredPaymentsActivity}
-                  emptyText="No payments found for this filter."
+                  emptyText={t("dashboard.noPayments")}
                   icon={<Wallet className="h-5 w-5" />}
                 />
                 <ActivitySection
                   sectionKey="created"
-                  title="Orders created for selected filter"
-                  subtitle={`${filteredCreatedOrdersActivity.length} bills`}
+                  title={t("dashboard.createdForFilter")}
+                  subtitle={t("common.billsCount", { count: filteredCreatedOrdersActivity.length })}
                   items={filteredCreatedOrdersActivity}
-                  emptyText="No new orders found for this filter."
+                  emptyText={t("dashboard.noCreatedOrders")}
                   icon={<ReceiptText className="h-5 w-5" />}
                 />
                 <ActivitySection
                   sectionKey="delivered"
-                  title="Fully paid / delivered bills for selected filter"
-                  subtitle={`${filteredDeliveredActivity.length} bills`}
+                  title={t("dashboard.deliveredForFilter")}
+                  subtitle={t("common.billsCount", { count: filteredDeliveredActivity.length })}
                   items={filteredDeliveredActivity}
-                  emptyText="No fully paid or delivered bills found for this filter."
+                  emptyText={t("dashboard.noDeliveredOrders")}
                   icon={<CheckCircle2 className="h-5 w-5" />}
                 />
               </div>
@@ -783,9 +755,9 @@ export default function DashboardPage() {
             <span className="flex items-center gap-3">
               <Truck className="h-6 w-6 text-brand" />
               <span>
-                <span className="block text-base font-bold text-ink">Bills Still Open</span>
+                <span className="block text-base font-bold text-ink">{t("dashboard.billsStillOpen")}</span>
                 <span className="block text-sm font-semibold text-slate-600">
-                  {openBills.length} open bills
+                  {t("common.openBillsCount", { count: openBills.length })}
                 </span>
               </span>
             </span>
@@ -798,10 +770,10 @@ export default function DashboardPage() {
 
           {showOpenBills ? (
             <div className="space-y-3 rounded-[22px] bg-white px-4 py-4 shadow-sm">
-              <p className="text-lg font-bold text-ink">Open Bills</p>
+              <p className="text-lg font-bold text-ink">{t("dashboard.openBillsTitle")}</p>
               {openBills.length === 0 ? (
                 <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
-                  No open bills.
+                  {t("dashboard.noOpenBills")}
                 </div>
               ) : (
                 openBills.map((bill) => (
@@ -809,18 +781,21 @@ export default function DashboardPage() {
                     key={bill.id}
                     className="rounded-2xl border border-sand bg-cream px-4 py-4"
                   >
-                    <p className="text-lg font-bold text-ink">Bill {bill.bill_number}</p>
+                    <p className="text-lg font-bold text-ink">{t("common.billWithNumber", { billNumber: bill.bill_number })}</p>
                     <p className="mt-1 text-base font-semibold text-slate-700">
                       {bill.customer_name}
                     </p>
                     <p className="mt-2 text-sm font-semibold text-slate-600">
-                      Pending {formatCurrency(bill.amount_pending)} • {bill.status}
+                      {t("common.pendingStatusValue", {
+                        amount: formatCurrency(bill.amount_pending),
+                        status: statusLabel(bill.status),
+                      })}
                     </p>
                     <Link
                       href={`/summary/bill/${encodeURIComponent(bill.bill_number)}`}
                       className="mt-3 inline-block text-sm font-bold text-brand underline underline-offset-4"
                     >
-                      More Details
+                      {t("common.moreDetails")}
                     </Link>
                   </div>
                 ))
@@ -835,7 +810,7 @@ export default function DashboardPage() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Home
+            {t("common.home")}
           </Link>
         </div>
       </section>
