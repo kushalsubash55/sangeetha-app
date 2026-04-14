@@ -17,20 +17,11 @@ type PendingOrder = {
   bill_number: string;
   customer_name: string;
   received_date: string;
-  ready_date: string | null;
   total_amount: number;
   amount_paid: number;
   amount_pending: number;
   status: string;
 };
-
-function formatDisplayDate(value: string | null, fallback: string) {
-  if (!value) {
-    return fallback;
-  }
-
-  return formatUiDate(value);
-}
 
 function SummaryCard({
   label,
@@ -89,7 +80,7 @@ export default function PendingOrdersPage() {
         const { data, error } = await supabase
           .from("orders")
           .select(
-            "id, bill_number, customer_name, received_date, ready_date, total_amount, amount_paid, amount_pending, status"
+            "id, bill_number, customer_name, received_date, total_amount, amount_paid, amount_pending, status"
           )
           .gt("amount_pending", 0)
           .neq("status", "DELIVERED")
@@ -226,8 +217,7 @@ export default function PendingOrdersPage() {
 
                 {openBills[order.bill_number] ? (
                   <div className="mt-4 grid grid-cols-1 gap-3">
-                    <DetailItem label={t("common.receivedDate")} value={formatDisplayDate(order.received_date, t("common.notSet"))} />
-                    <DetailItem label={t("common.readyDate")} value={formatDisplayDate(order.ready_date, t("common.notSet"))} />
+                    <DetailItem label={t("common.receivedDate")} value={formatUiDate(order.received_date)} />
                     <DetailItem
                       label={t("common.totalAmount")}
                       value={formatCurrency(Number(order.total_amount || 0))}

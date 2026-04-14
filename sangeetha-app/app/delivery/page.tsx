@@ -31,7 +31,6 @@ type OrderResult = {
   amount_paid: number;
   amount_pending: number;
   status: string;
-  notes: string | null;
 };
 
 type PaymentRow = {
@@ -121,7 +120,7 @@ function DeliveryPageContent() {
 
       const { data: foundOrder, error: orderError } = await supabase
         .from("orders")
-        .select("id, bill_number, customer_name, total_amount, amount_paid, amount_pending, status, notes")
+        .select("id, bill_number, customer_name, total_amount, amount_paid, amount_pending, status")
         .eq("bill_number", rawBillNumber.trim())
         .maybeSingle<OrderResult>();
 
@@ -253,10 +252,8 @@ function DeliveryPageContent() {
             amountReceivedNow: receivedNow,
             paymentMode,
             pendingAmountAfterPayment: Number(paymentResult.amount_pending),
-            workerIdentity:
-              session?.fullName && session?.phone
-                ? `${session.fullName} (${session.phone})`
-                : session?.phone || t("common.unknownWorker"),
+            employeeName: session?.fullName || t("common.unknownWorker"),
+            employeeId: session?.phone || t("common.notSet"),
             timestamp: formatUiDateTime(new Date()),
           }),
         });
@@ -379,7 +376,6 @@ function DeliveryPageContent() {
             <DetailRow label={t("common.totalPaidSoFar")} value={formatCurrency(totalPaid)} />
             <DetailRow label={t("common.balancePending")} value={formatCurrency(order.amount_pending)} />
             <DetailRow label={t("common.currentStatus")} value={statusLabel(order.status)} />
-            <DetailRow label={t("common.notes")} value={order.notes || t("common.noNotes")} />
 
             {delivered ? (
               <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-4 text-center text-base font-semibold text-emerald-700">

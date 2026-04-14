@@ -15,12 +15,10 @@ type OrderResult = {
   bill_number: string;
   customer_name: string;
   received_date: string;
-  ready_date: string | null;
   total_amount: number;
   amount_paid: number;
   amount_pending: number;
   status: string;
-  notes: string | null;
 };
 
 type PaymentRow = {
@@ -74,7 +72,7 @@ export default function SummaryBillDetailsPage() {
         const { data: orderData, error: orderError } = await supabase
           .from("orders")
           .select(
-            "id, bill_number, customer_name, received_date, ready_date, total_amount, amount_paid, amount_pending, status, notes"
+            "id, bill_number, customer_name, received_date, total_amount, amount_paid, amount_pending, status"
           )
           .eq("bill_number", billNumber)
           .maybeSingle<OrderResult>();
@@ -151,13 +149,11 @@ export default function SummaryBillDetailsPage() {
             <DetailRow label={t("common.billNumber")} value={order.bill_number} />
             <DetailRow label={t("common.customerName")} value={order.customer_name} />
             <DetailRow label={t("common.receivedDate")} value={formatUiDate(order.received_date)} />
-            <DetailRow label={t("common.readyDate")} value={order.ready_date ? formatUiDate(order.ready_date) : t("common.notSet")} />
             <DetailRow label={t("common.totalAmount")} value={formatCurrency(order.total_amount)} />
             <DetailRow label={t("common.advancePaid")} value={formatCurrency(order.amount_paid)} />
             <DetailRow label={t("common.totalPaid")} value={formatCurrency(totalPaid)} />
             <DetailRow label={t("common.balancePending")} value={formatCurrency(order.amount_pending)} />
             <DetailRow label={t("common.status")} value={statusLabel(order.status)} />
-            <DetailRow label={t("common.notes")} value={order.notes || t("common.noNotes")} />
           </div>
         ) : null}
 

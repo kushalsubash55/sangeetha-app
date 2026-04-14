@@ -6,7 +6,8 @@ type NotificationBody = {
   amountReceivedNow: number;
   paymentMode: "cash" | "upi";
   pendingAmountAfterPayment: number;
-  workerIdentity: string;
+  employeeName: string;
+  employeeId: string;
   timestamp: string;
 };
 
@@ -53,8 +54,10 @@ export async function POST(request: Request) {
     `Received: ${formatCurrency(Number(body.amountReceivedNow || 0))}`,
     `Mode: ${formatPaymentMode(body.paymentMode)}`,
     `Pending: ${formatCurrency(Number(body.pendingAmountAfterPayment || 0))}`,
-    `Worker: ${body.workerIdentity}`,
     `Time: ${body.timestamp}`,
+    "",
+    `Employee: ${body.employeeName}`,
+    `Employee ID: ${body.employeeId}`,
   ];
 
   const telegramResponse = await fetch(
