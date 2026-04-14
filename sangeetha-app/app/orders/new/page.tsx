@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -16,6 +16,7 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { usePaymentModeLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, todayDate } from "@/lib/utils";
@@ -53,6 +54,14 @@ export default function NewOrderPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const billNumberRef = useRef<HTMLInputElement>(null);
+  const customerNameRef = useRef<HTMLInputElement>(null);
+  const receivedDateRef = useRef<HTMLInputElement>(null);
+  const totalAmountRef = useRef<HTMLInputElement>(null);
+  const advancePaidRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useAutoScrollToMessage(errorMessage, errorRef);
 
   const pendingPreview = useMemo(() => {
     const total = Number(form.totalAmount || 0);
@@ -70,6 +79,14 @@ export default function NewOrderPage() {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
+  function showError(
+    message: string,
+    fieldRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>
+  ) {
+    setErrorMessage(message);
+    focusFieldAfterError(fieldRef);
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
@@ -79,42 +96,42 @@ export default function NewOrderPage() {
     const advancePaid = Number(form.advancePaid || 0);
 
     if (!form.billNumber.trim()) {
-      setErrorMessage(t("newOrder.enterBillNumber"));
+      showError(t("newOrder.enterBillNumber"), billNumberRef);
       return;
     }
 
     if (!form.customerName.trim()) {
-      setErrorMessage(t("newOrder.enterCustomerName"));
+      showError(t("newOrder.enterCustomerName"), customerNameRef);
       return;
     }
 
     if (!form.receivedDate) {
-      setErrorMessage(t("newOrder.enterReceivedDate"));
+      showError(t("newOrder.enterReceivedDate"), receivedDateRef);
       return;
     }
 
     if (!form.totalAmount || Number.isNaN(totalAmount) || totalAmount <= 0) {
-      setErrorMessage(t("newOrder.enterTotalAmount"));
+      showError(t("newOrder.enterTotalAmount"), totalAmountRef);
       return;
     }
 
     if (Number.isNaN(advancePaid) || advancePaid < 0) {
-      setErrorMessage(t("newOrder.enterValidAdvance"));
+      showError(t("newOrder.enterValidAdvance"), advancePaidRef);
       return;
     }
 
     if (advancePaid > totalAmount) {
-      setErrorMessage(t("newOrder.advanceTooHigh"));
+      showError(t("newOrder.advanceTooHigh"), advancePaidRef);
       return;
     }
 
     if (advancePaid > 0 && form.paymentMode === "none") {
-      setErrorMessage(t("newOrder.chooseCashOrUpi"));
+      showError(t("newOrder.chooseCashOrUpi"));
       return;
     }
 
     if (advancePaid === 0 && form.paymentMode !== "none") {
-      setErrorMessage(t("newOrder.chooseNone"));
+      showError(t("newOrder.chooseNone"));
       return;
     }
 
@@ -222,6 +239,7 @@ export default function NewOrderPage() {
 
         <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
           <InputField
+            ref={billNumberRef}
             label={t("common.billNumber")}
             name="billNumber"
             placeholder={t("searchBill.billPlaceholder")}
@@ -231,6 +249,7 @@ export default function NewOrderPage() {
           />
 
           <InputField
+            ref={customerNameRef}
             label={t("common.customerName")}
             name="customerName"
             placeholder={t("newOrder.customerPlaceholder")}
@@ -240,6 +259,7 @@ export default function NewOrderPage() {
           />
 
           <InputField
+            ref={receivedDateRef}
             label={t("common.receivedDate")}
             name="receivedDate"
             type="date"
@@ -258,6 +278,7 @@ export default function NewOrderPage() {
           />
 
           <InputField
+            ref={totalAmountRef}
             label={t("common.totalAmount")}
             name="totalAmount"
             placeholder={t("newOrder.totalAmountPlaceholder")}
@@ -271,6 +292,7 @@ export default function NewOrderPage() {
           />
 
           <InputField
+            ref={advancePaidRef}
             label={t("common.advancePaid")}
             name="advancePaid"
             placeholder={t("newOrder.advancePlaceholder")}
@@ -334,7 +356,10 @@ export default function NewOrderPage() {
           </label>
 
           {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
+            <div
+              ref={errorRef}
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700"
+            >
               {errorMessage}
             </div>
           ) : null}

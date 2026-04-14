@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
@@ -12,6 +12,7 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { useRequireWorkerSession } from "@/lib/session";
@@ -63,6 +64,11 @@ function SearchOrderPageContent() {
   const [notFoundMessage, setNotFoundMessage] = useState("");
   const [result, setResult] = useState<OrderResult | null>(null);
   const [totalPaid, setTotalPaid] = useState(0);
+  const billNumberRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+  const activeMessage = errorMessage || notFoundMessage;
+
+  useAutoScrollToMessage(activeMessage, messageRef);
 
   async function runSearch(rawBillNumber: string) {
     setErrorMessage("");
@@ -72,6 +78,7 @@ function SearchOrderPageContent() {
 
     if (!rawBillNumber.trim()) {
       setErrorMessage(t("searchBill.enterBillNumber"));
+      focusFieldAfterError(billNumberRef);
       return;
     }
 
@@ -154,6 +161,7 @@ function SearchOrderPageContent() {
 
         <form className="mt-5 space-y-4" onSubmit={handleSearch}>
           <InputField
+            ref={billNumberRef}
             label={t("common.billNumber")}
             name="billNumber"
             placeholder={t("searchBill.billPlaceholder")}
@@ -163,13 +171,19 @@ function SearchOrderPageContent() {
           />
 
           {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
+            <div
+              ref={messageRef}
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700"
+            >
               {errorMessage}
             </div>
           ) : null}
 
           {notFoundMessage ? (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800">
+            <div
+              ref={messageRef}
+              className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800"
+            >
               {notFoundMessage}
             </div>
           ) : null}

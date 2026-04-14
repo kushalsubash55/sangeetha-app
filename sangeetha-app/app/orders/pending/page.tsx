@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ChevronDown, Clock3, ReceiptText, Search } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { useRequireWorkerSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -74,6 +75,9 @@ export default function PendingOrdersPage() {
   const [openBills, setOpenBills] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useAutoScrollToMessage(errorMessage, errorRef);
 
   useEffect(() => {
     async function loadPendingOrders() {
@@ -165,7 +169,10 @@ export default function PendingOrdersPage() {
         </div>
 
         {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-base font-semibold text-red-700">
+          <div
+            ref={errorRef}
+            className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-base font-semibold text-red-700"
+          >
             {errorMessage}
           </div>
         ) : null}

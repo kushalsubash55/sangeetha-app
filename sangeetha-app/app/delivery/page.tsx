@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useEffect, useState } from "react";
+import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -15,6 +15,7 @@ import {
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { usePaymentModeLabel, useStatusLabel, useTranslation } from "@/lib/i18n";
 import { useRequireWorkerSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
@@ -90,7 +91,13 @@ function DeliveryPageContent() {
   const [successMessage, setSuccessMessage] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
   const [notFoundMessage, setNotFoundMessage] = useState("");
+  const billNumberRef = useRef<HTMLInputElement>(null);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const messageRef = useRef<HTMLDivElement>(null);
+  const activeMessage = errorMessage || notFoundMessage || warningMessage;
   const delivered = isDeliveredOrder(order);
+
+  useAutoScrollToMessage(activeMessage, messageRef);
 
   useEffect(() => {
     setBillNumber(billFromUrl);
@@ -160,6 +167,7 @@ function DeliveryPageContent() {
 
     if (!billNumber.trim()) {
       setErrorMessage(t("delivery.enterBillNumber"));
+      focusFieldAfterError(billNumberRef);
       return;
     }
 
@@ -174,6 +182,7 @@ function DeliveryPageContent() {
 
     if (!order) {
       setErrorMessage(t("delivery.searchFirst"));
+      focusFieldAfterError(billNumberRef);
       return;
     }
 
@@ -181,16 +190,19 @@ function DeliveryPageContent() {
 
     if (Number.isNaN(receivedNow) || receivedNow < 0) {
       setErrorMessage(t("delivery.enterValidAmount"));
+      focusFieldAfterError(amountRef);
       return;
     }
 
     if (receivedNow > order.amount_pending) {
       setErrorMessage(t("delivery.amountTooHigh"));
+      focusFieldAfterError(amountRef);
       return;
     }
 
     if (receivedNow === 0) {
       setErrorMessage(t("delivery.enterPaymentAmount"));
+      focusFieldAfterError(amountRef);
       return;
     }
 
@@ -295,6 +307,7 @@ function DeliveryPageContent() {
 
         <form className="mt-5 space-y-4" onSubmit={handleSearch}>
           <InputField
+            ref={billNumberRef}
             label={t("common.billNumber")}
             name="billNumber"
             placeholder={t("delivery.billPlaceholder")}
@@ -309,13 +322,19 @@ function DeliveryPageContent() {
         </form>
 
         {errorMessage ? (
-          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
+          <div
+            ref={messageRef}
+            className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700"
+          >
             {errorMessage}
           </div>
         ) : null}
 
         {notFoundMessage ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800">
+          <div
+            ref={messageRef}
+            className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800"
+          >
             {notFoundMessage}
           </div>
         ) : null}
@@ -330,7 +349,10 @@ function DeliveryPageContent() {
         ) : null}
 
         {warningMessage ? (
-          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800">
+          <div
+            ref={messageRef}
+            className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800"
+          >
             {warningMessage}
           </div>
         ) : null}
@@ -363,6 +385,7 @@ function DeliveryPageContent() {
             ) : (
               <form className="space-y-4" onSubmit={handleSave}>
                 <InputField
+                  ref={amountRef}
                   label={t("delivery.amountReceivedNow")}
                   name="amountReceivedNow"
                   placeholder={t("delivery.amountPlaceholder")}

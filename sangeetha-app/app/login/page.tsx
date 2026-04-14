@@ -1,11 +1,12 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LogIn, Phone, ShieldCheck } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
+import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useTranslation } from "@/lib/i18n";
 import { getWorkerSession, setWorkerSession } from "@/lib/session";
 
@@ -15,6 +16,11 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const pinRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  useAutoScrollToMessage(errorMessage, errorRef);
 
   useEffect(() => {
     const existingSession = getWorkerSession();
@@ -30,11 +36,13 @@ export default function LoginPage() {
 
     if (!phone.trim()) {
       setErrorMessage(t("login.enterPhone"));
+      focusFieldAfterError(phoneRef);
       return;
     }
 
     if (!pin.trim()) {
       setErrorMessage(t("login.enterPin"));
+      focusFieldAfterError(pinRef);
       return;
     }
 
@@ -61,6 +69,7 @@ export default function LoginPage() {
 
         <form className="space-y-4" onSubmit={handleSubmit}>
           <InputField
+            ref={phoneRef}
             label={t("login.phoneNumber")}
             name="phone"
             placeholder={t("login.phonePlaceholder")}
@@ -70,6 +79,7 @@ export default function LoginPage() {
             icon={<Phone className="h-6 w-6" />}
           />
           <InputField
+            ref={pinRef}
             label={t("login.pin")}
             name="pin"
             placeholder={t("login.pinPlaceholder")}
@@ -79,7 +89,10 @@ export default function LoginPage() {
             icon={<ShieldCheck className="h-6 w-6" />}
           />
           {errorMessage ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700">
+            <div
+              ref={errorRef}
+              className="rounded-2xl border border-red-200 bg-red-50 px-4 py-4 text-base font-semibold text-red-700"
+            >
               {errorMessage}
             </div>
           ) : null}
