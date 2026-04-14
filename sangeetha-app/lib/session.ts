@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 
-const WORKER_SESSION_KEY = "tailor_worker_session";
+const WORKER_SESSION_KEY = "sangeetha_worker_session";
 
 export type WorkerSession = {
   phone: string;

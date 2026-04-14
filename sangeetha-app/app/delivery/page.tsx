@@ -70,7 +70,7 @@ function isDeliveredOrder(order: OrderResult | null) {
 }
 
 function DeliveryPageContent() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking, session } = useRequireWorkerSession();
   const router = useRouter();
   const searchParams = useSearchParams();
   const billFromUrl = searchParams.get("bill") ?? "";
@@ -84,6 +84,7 @@ function DeliveryPageContent() {
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
   const [notFoundMessage, setNotFoundMessage] = useState("");
   const delivered = isDeliveredOrder(order);
 
@@ -99,6 +100,7 @@ function DeliveryPageContent() {
     setIsLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
+    setWarningMessage("");
     setNotFoundMessage("");
     setOrder(null);
     setTotalPaid(0);
@@ -164,6 +166,7 @@ function DeliveryPageContent() {
     event.preventDefault();
     setErrorMessage("");
     setSuccessMessage("");
+    setWarningMessage("");
 
     if (!order) {
       setErrorMessage("Search bill number first.");
@@ -221,6 +224,37 @@ function DeliveryPageContent() {
       setOrder(refreshedOrder);
       setTotalPaid(Number(paymentResult.total_paid));
       setAmountReceivedNow("");
+
+      try {
+        const notificationResponse = await fetch("/api/telegram-owner-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            billNumber: order.bill_number,
+            customerName: order.customer_name,
+            amountReceivedNow: receivedNow,
+            paymentMode,
+            pendingAmountAfterPayment: Number(paymentResult.amount_pending),
+            workerIdentity: session?.phone || "Unknown worker",
+            timestamp: new Date().toLocaleString("en-IN", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+              hour: "numeric",
+              minute: "2-digit",
+            }),
+          }),
+        });
+
+        if (!notificationResponse.ok) {
+          setWarningMessage("Payment saved, but owner notification could not be sent.");
+        }
+      } catch (error) {
+        console.error("Telegram notification failed", error);
+        setWarningMessage("Payment saved, but owner notification could not be sent.");
+      }
 
       if (Number(paymentResult.amount_pending) === 0) {
         setSuccessMessage("Bill is delivered. Returning to home page...");
@@ -291,6 +325,12 @@ function DeliveryPageContent() {
               <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0" />
               <span>{successMessage}</span>
             </div>
+          </div>
+        ) : null}
+
+        {warningMessage ? (
+          <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-base font-semibold text-amber-800">
+            {warningMessage}
           </div>
         ) : null}
 

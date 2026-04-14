@@ -1,11 +1,14 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
+  CheckCircle2,
   ChevronDown,
   ChevronUp,
+  ReceiptText,
   SunMedium,
   Truck,
   Wallet,
@@ -21,16 +24,20 @@ type OrderRow = {
   customer_name: string;
   received_date: string;
   created_at: string;
+  total_amount: number;
   amount_pending: number;
   status: string;
+  created_by: string | null;
 };
 
 type PaymentRow = {
   amount: number;
   payment_method: "cash" | "upi";
+  payment_type: "advance" | "partial" | "full";
   payment_date: string;
   created_at: string;
   order_id: string;
+  recorded_by: string | null;
   orders: {
     bill_number: string;
     customer_name: string;
@@ -40,6 +47,7 @@ type PaymentRow = {
 type DeliveryRow = {
   id: string;
   delivered_at: string;
+  order_id: string;
 };
 
 type SummaryState = {
@@ -62,10 +70,14 @@ type LifetimeSummaryState = {
   totalPendingAmount: number;
 };
 
-type ActivityItem = {
-  title: string;
-  subtitle: string;
+type ActivityEntry = {
+  billNumber: string;
+  customerName: string;
+  action: string;
+  amountText: string | null;
+  paymentModeText: string | null;
   time: string;
+  workerLabel: string | null;
 };
 
 type OpenBillItem = {
@@ -136,6 +148,11 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
   if (filter === "today") {
     return {
       label: "Today",
+      showing: now.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
       start: todayStart,
       end: endOfDay(now),
       dates: [formatDateOnly(now)],
@@ -148,6 +165,11 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
 
     return {
       label: "Yesterday",
+      showing: yesterday.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }),
       start: yesterday,
       end: endOfDay(yesterday),
       dates: [formatDateOnly(yesterday)],
@@ -167,6 +189,15 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
 
     return {
       label: "Last 7 Days",
+      showing: `${start.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })} - ${now.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })}`,
       start,
       end: endOfDay(now),
       dates,
@@ -185,6 +216,10 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
 
     return {
       label: "This Month",
+      showing: now.toLocaleDateString("en-IN", {
+        month: "short",
+        year: "numeric",
+      }),
       start,
       end: endOfDay(now),
       dates,
@@ -213,10 +248,27 @@ function getFilterInfo(filter: FilterKey, customFromDate: string, customToDate: 
       month: "short",
       year: "numeric",
     })}`,
+    showing: `${safeStart.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })} - ${safeEndBase.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })}`,
     start: startOfDay(safeStart),
     end: endOfDay(safeEndBase),
     dates,
   };
+}
+
+function formatWorkerId(workerId: string | null) {
+  if (!workerId) {
+    return null;
+  }
+
+  return `Worker ${workerId.slice(0, 8)}`;
 }
 
 export default function DashboardPage() {
@@ -226,7 +278,11 @@ export default function DashboardPage() {
   const [deliveries, setDeliveries] = useState<DeliveryRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
-  const [showRecentActivity, setShowRecentActivity] = useState(false);
+  const [openActivitySections, setOpenActivitySections] = useState({
+    payments: false,
+    created: false,
+    delivered: false,
+  });
   const [showOpenBills, setShowOpenBills] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<FilterKey>("today");
   const [customFromDate, setCustomFromDate] = useState(formatDateOnly(new Date()));
@@ -246,13 +302,17 @@ export default function DashboardPage() {
         const [ordersResult, paymentsResult, deliveriesResult] = await Promise.all([
           supabase
             .from("orders")
-            .select("id, bill_number, customer_name, received_date, created_at, amount_pending, status")
+            .select(
+              "id, bill_number, customer_name, received_date, created_at, total_amount, amount_pending, status, created_by"
+            )
             .returns<OrderRow[]>(),
           supabase
             .from("payments")
-            .select("amount, payment_method, payment_date, created_at, order_id, orders(bill_number, customer_name)")
+            .select(
+              "amount, payment_method, payment_type, payment_date, created_at, order_id, recorded_by, orders(bill_number, customer_name)"
+            )
             .returns<PaymentRow[]>(),
-          supabase.from("deliveries").select("id, delivered_at").returns<DeliveryRow[]>(),
+          supabase.from("deliveries").select("id, delivered_at, order_id").returns<DeliveryRow[]>(),
         ]);
 
         const firstError = ordersResult.error || paymentsResult.error || deliveriesResult.error;
@@ -355,19 +415,69 @@ export default function DashboardPage() {
     };
   }, [orders, payments]);
 
-  const recentActivity = useMemo<ActivityItem[]>(() => {
+  const filteredPaymentsActivity = useMemo<ActivityEntry[]>(() => {
     return payments
       .filter((payment) => {
         const paymentTime = new Date(payment.payment_date || payment.created_at).getTime();
         return paymentTime >= filterInfo.start.getTime() && paymentTime < filterInfo.end.getTime();
       })
       .map((payment) => ({
-        title: `Payment ${formatCurrency(Number(payment.amount || 0))}`,
-        subtitle: payment.orders?.bill_number ? `Bill ${payment.orders.bill_number}` : "Payment received",
+        billNumber: payment.orders?.bill_number ?? "-",
+        customerName: payment.orders?.customer_name ?? "No customer name",
+        action: payment.payment_type === "full" ? "Fully Paid" : "Paid",
+        amountText: formatCurrency(Number(payment.amount || 0)),
+        paymentModeText: payment.payment_method.toUpperCase(),
         time: payment.payment_date || payment.created_at,
+        workerLabel: formatWorkerId(payment.recorded_by),
       }))
       .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
   }, [filterInfo, payments]);
+
+  const filteredCreatedOrdersActivity = useMemo<ActivityEntry[]>(() => {
+    return orders
+      .filter((order) => {
+        const orderTime = new Date(order.created_at).getTime();
+        return orderTime >= filterInfo.start.getTime() && orderTime < filterInfo.end.getTime();
+      })
+      .map((order) => ({
+        billNumber: order.bill_number,
+        customerName: order.customer_name,
+        action: "Created",
+        amountText: formatCurrency(Number(order.total_amount || 0)),
+        paymentModeText: null,
+        time: order.created_at,
+        workerLabel: formatWorkerId(order.created_by),
+      }))
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  }, [filterInfo, orders]);
+
+  const filteredDeliveredActivity = useMemo<ActivityEntry[]>(() => {
+    const deliveredOrderIds = new Set(
+      deliveries
+        .filter((delivery) => {
+          const deliveryTime = new Date(delivery.delivered_at).getTime();
+          return deliveryTime >= filterInfo.start.getTime() && deliveryTime < filterInfo.end.getTime();
+        })
+        .map((delivery) => delivery.order_id)
+    );
+
+    return payments
+      .filter(
+        (payment) =>
+          payment.payment_type === "full" &&
+          deliveredOrderIds.has(payment.order_id)
+      )
+      .map((payment) => ({
+        billNumber: payment.orders?.bill_number ?? "-",
+        customerName: payment.orders?.customer_name ?? "No customer name",
+        action: "Fully Paid / Delivered",
+        amountText: formatCurrency(Number(payment.amount || 0)),
+        paymentModeText: payment.payment_method.toUpperCase(),
+        time: payment.payment_date || payment.created_at,
+        workerLabel: formatWorkerId(payment.recorded_by),
+      }))
+      .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  }, [deliveries, filterInfo, payments]);
 
   const openBills = useMemo<OpenBillItem[]>(() => {
     return orders
@@ -381,6 +491,94 @@ export default function DashboardPage() {
         status: order.status,
       }));
   }, [orders]);
+
+  function toggleActivitySection(section: keyof typeof openActivitySections) {
+    setOpenActivitySections((current) => ({
+      ...current,
+      [section]: !current[section],
+    }));
+  }
+
+  function ActivitySection({
+    sectionKey,
+    title,
+    subtitle,
+    items,
+    emptyText,
+    icon,
+  }: {
+    sectionKey: keyof typeof openActivitySections;
+    title: string;
+    subtitle: string;
+    items: ActivityEntry[];
+    emptyText: string;
+    icon: ReactNode;
+  }) {
+    const isOpen = openActivitySections[sectionKey];
+
+    return (
+      <div className="rounded-2xl border border-sand bg-cream px-4 py-4">
+        <button
+          type="button"
+          onClick={() => toggleActivitySection(sectionKey)}
+          className="flex w-full items-center justify-between gap-3 text-left"
+        >
+          <span className="flex items-center gap-3">
+            <span className="rounded-xl bg-white p-2 text-brand shadow-sm">{icon}</span>
+            <span>
+              <span className="block text-base font-bold text-ink">{title}</span>
+              <span className="block text-sm font-semibold text-slate-600">{subtitle}</span>
+            </span>
+          </span>
+          {isOpen ? (
+            <ChevronUp className="h-5 w-5 text-ink" />
+          ) : (
+            <ChevronDown className="h-5 w-5 text-ink" />
+          )}
+        </button>
+
+        {isOpen ? (
+          <div className="mt-3 space-y-3">
+            {items.length === 0 ? (
+              <div className="rounded-2xl bg-white px-4 py-4 text-center text-base font-semibold text-slate-600">
+                {emptyText}
+              </div>
+            ) : (
+              items.map((item, index) => (
+                <Link
+                  key={`${sectionKey}-${item.billNumber}-${item.time}-${index}`}
+                  href={`/summary/bill/${encodeURIComponent(item.billNumber)}`}
+                  className="block rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm"
+                >
+                  <p className="text-base font-bold text-ink">
+                    Bill {item.billNumber} | {item.customerName}
+                  </p>
+                  <p className="mt-1 text-sm font-semibold text-slate-700">
+                    {item.action}
+                    {item.amountText ? ` | ${item.amountText}` : ""}
+                    {item.paymentModeText ? ` by ${item.paymentModeText}` : ""}
+                  </p>
+                  <p className="mt-2 text-sm font-semibold text-slate-500">
+                    {new Date(item.time).toLocaleString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </p>
+                  {item.workerLabel ? (
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-slate-500">
+                      {item.workerLabel}
+                    </p>
+                  ) : null}
+                </Link>
+              ))
+            )}
+          </div>
+        ) : null}
+      </div>
+    );
+  }
 
   if (isChecking) {
     return null;
@@ -480,22 +678,26 @@ export default function DashboardPage() {
                   </p>
                 </div>
               ) : null}
+
+              <p className="mt-4 text-sm font-semibold text-slate-600">
+                Showing: {filterInfo.showing}
+              </p>
             </div>
 
             <div className="mt-5 space-y-4">
               <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
-                <p className="text-base font-semibold text-ink">{filterInfo.label}</p>
+                <p className="text-base font-semibold text-ink">Total Collection</p>
                 <p className="mt-1 text-3xl font-bold text-brand">
                   {formatCurrency(filteredSummary.totalCollected)}
                 </p>
                 <p className="mt-2 text-sm font-semibold text-slate-600">
-                  Total collected for selected period
+                  For selected filter
                 </p>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard title="Orders Received" value={String(filteredSummary.ordersReceived)} />
-                <StatCard title="Orders Delivered" value={String(filteredSummary.ordersDelivered)} />
+                <StatCard title="Received Today" value={String(filteredSummary.ordersReceived)} />
+                <StatCard title="Delivered Today" value={String(filteredSummary.ordersDelivered)} />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
@@ -504,8 +706,8 @@ export default function DashboardPage() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <StatCard title="Pending Now" value={formatCurrency(filteredSummary.totalPendingAmount)} />
-                <StatCard title="Bills Open" value={String(filteredSummary.openBillsCount)} />
+                <StatCard title="Pending Amount" value={formatCurrency(filteredSummary.totalPendingAmount)} />
+                <StatCard title="Open Bills" value={String(filteredSummary.openBillsCount)} />
               </div>
             </div>
 
@@ -539,60 +741,35 @@ export default function DashboardPage() {
 
             <div className="mt-5 rounded-[22px] bg-white px-4 py-4 shadow-sm">
               <p className="text-lg font-bold text-ink">Recent Activity</p>
-              <button
-                type="button"
-                onClick={() => setShowRecentActivity((current) => !current)}
-                className="mt-4 flex w-full items-center justify-between rounded-2xl border border-sand bg-cream px-4 py-4 text-left"
-              >
-                <span>
-                  <span className="block text-base font-bold text-ink">Open Payments</span>
-                  <span className="block text-sm font-semibold text-slate-600">
-                    {recentActivity.length} payments in {filterInfo.label.toLowerCase()}
-                  </span>
-                </span>
-                {showRecentActivity ? (
-                  <ChevronUp className="h-5 w-5 text-ink" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-ink" />
-                )}
-              </button>
-
-              {showRecentActivity ? (
-                <div className="mt-3 space-y-3">
-                  {recentActivity.length === 0 ? (
-                    <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
-                      No payments in this period.
-                    </div>
-                  ) : (
-                    recentActivity.map((payment, index) => (
-                      <div
-                        key={`${payment.title}-${payment.time}-${index}`}
-                        className="rounded-2xl border border-sand bg-cream px-4 py-4"
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="rounded-xl bg-white p-2 text-brand shadow-sm">
-                            <Wallet className="h-5 w-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="text-base font-bold text-ink">{payment.title}</p>
-                            <p className="text-sm font-semibold text-slate-600">
-                              {payment.subtitle}
-                            </p>
-                          </div>
-                        </div>
-                        <p className="mt-3 text-sm font-semibold text-slate-500">
-                          {new Date(payment.time).toLocaleString("en-IN", {
-                            day: "2-digit",
-                            month: "short",
-                            hour: "numeric",
-                            minute: "2-digit",
-                          })}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              ) : null}
+              <p className="mt-2 text-sm font-semibold text-slate-600">
+                Expand any section to see all bills for the selected filter.
+              </p>
+              <div className="mt-4 space-y-3">
+                <ActivitySection
+                  sectionKey="payments"
+                  title="Payments for selected filter"
+                  subtitle={`${filteredPaymentsActivity.length} bills`}
+                  items={filteredPaymentsActivity}
+                  emptyText="No payments found for this filter."
+                  icon={<Wallet className="h-5 w-5" />}
+                />
+                <ActivitySection
+                  sectionKey="created"
+                  title="Orders created for selected filter"
+                  subtitle={`${filteredCreatedOrdersActivity.length} bills`}
+                  items={filteredCreatedOrdersActivity}
+                  emptyText="No new orders found for this filter."
+                  icon={<ReceiptText className="h-5 w-5" />}
+                />
+                <ActivitySection
+                  sectionKey="delivered"
+                  title="Fully paid / delivered bills for selected filter"
+                  subtitle={`${filteredDeliveredActivity.length} bills`}
+                  items={filteredDeliveredActivity}
+                  emptyText="No fully paid or delivered bills found for this filter."
+                  icon={<CheckCircle2 className="h-5 w-5" />}
+                />
+              </div>
             </div>
           </>
         )}
@@ -658,7 +835,7 @@ export default function DashboardPage() {
             className="flex items-center justify-center gap-2 rounded-2xl border border-sand bg-white px-4 py-4 text-lg font-bold text-ink shadow-sm"
           >
             <ArrowLeft className="h-5 w-5" />
-            Back
+            Home
           </Link>
         </div>
       </section>
