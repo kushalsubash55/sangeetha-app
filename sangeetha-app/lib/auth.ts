@@ -3,5 +3,5 @@ export function isOwner(role: string | null | undefined) {
 }
 
 export function isWorker(role: string | null | undefined) {
-  return role === "worker";
+  return role === "employee";
 }

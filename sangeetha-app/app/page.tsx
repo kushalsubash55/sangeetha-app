@@ -5,11 +5,12 @@ import { LogOut, PackageCheck, ReceiptText, Search, ShoppingBag, SunMedium } fro
 import { BigButton } from "@/components/big-button";
 import { PageBrand } from "@/components/page-brand";
 import { useTranslation } from "@/lib/i18n";
-import { clearWorkerSession, useRequireWorkerSession } from "@/lib/session";
+import { clearAppSession, useRequireSession } from "@/lib/session";
 
 export default function HomePage() {
-  const { isChecking, session } = useRequireWorkerSession();
+  const { isChecking, session } = useRequireSession();
   const { t } = useTranslation();
+  const isOwner = session?.role === "owner";
 
   if (isChecking) {
     return null;
@@ -21,7 +22,10 @@ export default function HomePage() {
         <div className="rounded-[24px] bg-[linear-gradient(135deg,#0d5eb8_0%,#1788e6_58%,#4fc3ff_100%)] px-5 py-6 text-white shadow-[0_16px_40px_rgba(20,121,220,0.24)]">
           <PageBrand />
           <p className="mt-3 text-sm font-semibold text-white/80">
-            {t("common.workerId")}: {session?.phone}
+            {t("common.name")}: {session?.fullName}
+          </p>
+          <p className="mt-3 text-sm font-semibold text-white/80">
+            {isOwner ? t("common.ownerId") : t("common.workerId")}: {session?.phone}
           </p>
         </div>
 
@@ -54,13 +58,15 @@ export default function HomePage() {
             <PackageCheck className="h-6 w-6" />
             {t("home.pendingOrders")}
           </Link>
-          <Link
-            href="/summary/today"
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sand bg-white px-5 py-4 text-xl font-bold text-ink shadow-[0_10px_22px_rgba(22,50,79,0.1)]"
-          >
-            <SunMedium className="h-6 w-6" />
-            {t("home.todaySummary")}
-          </Link>
+          {isOwner ? (
+            <Link
+              href="/summary/today"
+              className="flex w-full items-center justify-center gap-3 rounded-2xl border border-sand bg-white px-5 py-4 text-xl font-bold text-ink shadow-[0_10px_22px_rgba(22,50,79,0.1)]"
+            >
+              <SunMedium className="h-6 w-6" />
+              {t("home.todaySummary")}
+            </Link>
+          ) : null}
         </div>
 
         <div className="mt-5">
@@ -68,7 +74,7 @@ export default function HomePage() {
             type="button"
             className="bg-[linear-gradient(135deg,#173358_0%,#224d82_100%)] text-white shadow-[0_14px_28px_rgba(23,51,88,0.28)]"
             onClick={() => {
-              clearWorkerSession();
+              clearAppSession();
               window.location.href = "/login";
             }}
           >

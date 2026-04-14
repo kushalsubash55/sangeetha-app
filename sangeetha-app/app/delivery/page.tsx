@@ -17,7 +17,7 @@ import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
 import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { usePaymentModeLabel, useStatusLabel, useTranslation } from "@/lib/i18n";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, formatUiDateTime } from "@/lib/utils";
 
@@ -72,7 +72,7 @@ function isDeliveredOrder(order: OrderResult | null) {
 }
 
 function DeliveryPageContent() {
-  const { isChecking, session } = useRequireWorkerSession();
+  const { isChecking, session } = useRequireSession();
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const paymentModeLabel = usePaymentModeLabel();
@@ -253,7 +253,10 @@ function DeliveryPageContent() {
             amountReceivedNow: receivedNow,
             paymentMode,
             pendingAmountAfterPayment: Number(paymentResult.amount_pending),
-            workerIdentity: session?.phone || t("common.unknownWorker"),
+            workerIdentity:
+              session?.fullName && session?.phone
+                ? `${session.fullName} (${session.phone})`
+                : session?.phone || t("common.unknownWorker"),
             timestamp: formatUiDateTime(new Date()),
           }),
         });

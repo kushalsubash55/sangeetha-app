@@ -38,13 +38,15 @@
     "from": "ಫ್ರಂ",
     "to": "ಟು",
     "filter": "ಫಿಲ್ಟರ್",
-    "workerId": "ವರ್ಕರ್ ಐಡಿ",
+    "name": "ಹೆಸರು",
+    "workerId": "ಎಂಪ್ಲಾಯೀ ಐಡಿ",
+    "ownerId": "ಓನರ್ ಐಡಿ",
     "logout": "ಲಾಗ್ ಔಟ್",
     "receivedStatus": "ರಿಸೀವ್ಡ್",
     "readyStatus": "ರೆಡಿ",
     "deliveredStatus": "ಡೆಲಿವರ್ಡ್",
-    "workerShort": "ವರ್ಕರ್ {{id}}",
-    "unknownWorker": "ಅನ್ ನೋನ್ ವರ್ಕರ್",
+    "workerShort": "ಎಂಪ್ಲಾಯೀ {{id}}",
+    "unknownWorker": "ಅನ್ ನೋನ್ ಎಂಪ್ಲಾಯೀ",
     "billsCount": "{{count}} ಬಿಲ್‌ಗಳು",
     "openBillsCount": "{{count}} ಓಪನ್ ಬಿಲ್‌ಗಳು",
     "pendingValue": "ಪೆಂಡಿಂಗ್ {{amount}}",
@@ -53,7 +55,7 @@
     "dateTypeHint": "ಡೇಟ್ ಟೈಪ್ ಮಾಡಬಹುದು ಅಥವಾ ಕ್ಯಾಲೆಂಡರ್ ಯೂಸ್ ಮಾಡಬಹುದು."
   },
   "login": {
-    "title": "ವರ್ಕರ್ ಲಾಗಿನ್",
+    "title": "ಲಾಗಿನ್",
     "subtitle": "ಫೋನ್ ನಂಬರ್ ಮತ್ತು ಪಿನ್ ಎಂಟರ್ ಮಾಡಿ. ಕೌಂಟರ್‌ನಲ್ಲಿ ಫಾಸ್ಟ್ ಆಗಿ ಮಾಡಿ.",
     "phoneNumber": "ಫೋನ್ ನಂಬರ್",
     "phonePlaceholder": "ಫೋನ್ ನಂಬರ್ ಎಂಟರ್ ಮಾಡಿ",
@@ -63,7 +65,9 @@
     "version": "ವರ್ಷನ್ 1",
     "versionNote": "ಆರ್ಡರ್, ಡೆಲಿವರಿ, ಪೇಮೆಂಟ್ ಮತ್ತು ಓನರ್ ರಿಪೋರ್ಟ್ ಸ್ಕ್ರೀನ್ ಬೈ ಸ್ಕ್ರೀನ್ ಬರುತ್ತವೆ.",
     "enterPhone": "ಫೋನ್ ನಂಬರ್ ಎಂಟರ್ ಮಾಡಿ.",
-    "enterPin": "ಪಿನ್ ಎಂಟರ್ ಮಾಡಿ."
+    "enterPin": "ಪಿನ್ ಎಂಟರ್ ಮಾಡಿ.",
+    "invalidCredentials": "ಇನ್‌ವ್ಯಾಲಿಡ್ ಫೋನ್ ಅಥವಾ ಪಿನ್.",
+    "loginFailed": "ಲಾಗಿನ್ ಆಗಲಿಲ್ಲ. ಮತ್ತೆ ಟ್ರೈ ಮಾಡಿ."
   },
   "home": {
     "newOrder": "ನ್ಯೂ ಆರ್ಡರ್",

@@ -20,7 +20,7 @@ import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedbac
 import { usePaymentModeLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, todayDate } from "@/lib/utils";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 
 type PaymentMode = "cash" | "upi" | "none";
 
@@ -47,7 +47,7 @@ const initialForm: FormState = {
 };
 
 export default function NewOrderPage() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking } = useRequireSession();
   const { t } = useTranslation();
   const paymentModeLabel = usePaymentModeLabel();
   const [form, setForm] = useState<FormState>(initialForm);

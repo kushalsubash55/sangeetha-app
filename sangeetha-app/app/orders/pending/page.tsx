@@ -8,7 +8,7 @@ import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
 import { useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useStatusLabel, useTranslation } from "@/lib/i18n";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, formatUiDate } from "@/lib/utils";
 
@@ -67,7 +67,7 @@ function DetailItem({
 }
 
 export default function PendingOrdersPage() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking } = useRequireSession();
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const [allOrders, setAllOrders] = useState<PendingOrder[]>([]);

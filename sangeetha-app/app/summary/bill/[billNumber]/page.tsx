@@ -7,7 +7,7 @@ import { ArrowLeft } from "lucide-react";
 import { PageBrand } from "@/components/page-brand";
 import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 import { formatCurrency, formatUiDate } from "@/lib/utils";
 
 type OrderResult = {
@@ -45,7 +45,10 @@ function DetailRow({
 }
 
 export default function SummaryBillDetailsPage() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking } = useRequireSession({
+    allowedRoles: ["owner"],
+    redirectTo: "/",
+  });
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const params = useParams<{ billNumber: string }>();

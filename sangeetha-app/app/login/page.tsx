@@ -8,7 +8,16 @@ import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
 import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useTranslation } from "@/lib/i18n";
-import { getWorkerSession, setWorkerSession } from "@/lib/session";
+import { getSupabaseClient } from "@/lib/supabase";
+import { getAppSession, setAppSession } from "@/lib/session";
+
+type AppUser = {
+  id: string;
+  name: string;
+  phone: string;
+  pin: string;
+  role: "owner" | "employee";
+};
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,6 +25,7 @@ export default function LoginPage() {
   const [phone, setPhone] = useState("");
   const [pin, setPin] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const phoneRef = useRef<HTMLInputElement>(null);
   const pinRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
@@ -23,14 +33,14 @@ export default function LoginPage() {
   useAutoScrollToMessage(errorMessage, errorRef);
 
   useEffect(() => {
-    const existingSession = getWorkerSession();
+    const existingSession = getAppSession();
 
     if (existingSession) {
       router.replace("/");
     }
   }, [router]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrorMessage("");
 
@@ -46,12 +56,43 @@ export default function LoginPage() {
       return;
     }
 
-    setWorkerSession({
-      phone: phone.trim(),
-      role: "worker",
-    });
+    setIsSubmitting(true);
 
-    router.push("/");
+    try {
+      const supabase = getSupabaseClient();
+      const { data, error } = await supabase
+        .from("users")
+        .select("id, name, phone, pin, role")
+        .eq("phone", phone.trim())
+        .maybeSingle<AppUser>();
+
+      if (error) {
+        setErrorMessage(error.message || t("login.loginFailed"));
+        return;
+      }
+
+      if (!data || data.pin !== pin.trim()) {
+        setErrorMessage(t("login.invalidCredentials"));
+        focusFieldAfterError(pinRef);
+        return;
+      }
+
+      setAppSession({
+        id: data.id,
+        fullName: data.name,
+        phone: data.phone,
+        role: data.role,
+      });
+
+      router.push("/");
+    } catch (error) {
+      console.error("Login failed", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : t("login.loginFailed")
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -96,7 +137,7 @@ export default function LoginPage() {
               {errorMessage}
             </div>
           ) : null}
-          <BigButton type="submit">
+          <BigButton type="submit" disabled={isSubmitting} className={isSubmitting ? "opacity-70" : ""}>
             <LogIn className="h-6 w-6" />
             {t("login.button")}
           </BigButton>

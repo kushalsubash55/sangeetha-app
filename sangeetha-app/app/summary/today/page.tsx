@@ -21,7 +21,7 @@ import {
   useTranslation,
 } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 import { formatCurrency, formatUiDate, formatUiDateTime } from "@/lib/utils";
 
 type OrderRow = {
@@ -243,7 +243,10 @@ function getFilterInfo(
 }
 
 export default function DashboardPage() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking } = useRequireSession({
+    allowedRoles: ["owner"],
+    redirectTo: "/",
+  });
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const paymentModeLabel = usePaymentModeLabel();

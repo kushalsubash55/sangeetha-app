@@ -38,13 +38,15 @@
     "from": "From",
     "to": "To",
     "filter": "Filter",
-    "workerId": "Worker ID",
+    "name": "Name",
+    "workerId": "Employee ID",
+    "ownerId": "Owner ID",
     "logout": "Logout",
     "receivedStatus": "RECEIVED",
     "readyStatus": "READY",
     "deliveredStatus": "DELIVERED",
-    "workerShort": "Worker {{id}}",
-    "unknownWorker": "Unknown worker",
+    "workerShort": "Employee {{id}}",
+    "unknownWorker": "Unknown employee",
     "billsCount": "{{count}} bills",
     "openBillsCount": "{{count}} open bills",
     "pendingValue": "Pending {{amount}}",
@@ -53,7 +55,7 @@
     "dateTypeHint": "You can type dates manually or use the calendar."
   },
   "login": {
-    "title": "Worker Login",
+    "title": "Login",
     "subtitle": "Enter phone number and PIN. Keep it simple and fast at the counter.",
     "phoneNumber": "Phone Number",
     "phonePlaceholder": "Enter phone number",
@@ -63,7 +65,9 @@
     "version": "Version 1",
     "versionNote": "Orders, delivery, payments, and owner reports will be added screen by screen.",
     "enterPhone": "Enter phone number.",
-    "enterPin": "Enter PIN."
+    "enterPin": "Enter PIN.",
+    "invalidCredentials": "Invalid phone or PIN.",
+    "loginFailed": "Could not log in. Try again."
   },
   "home": {
     "newOrder": "New Order",

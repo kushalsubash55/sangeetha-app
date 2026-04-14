@@ -15,7 +15,7 @@ import { PageBrand } from "@/components/page-brand";
 import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { useStatusLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
-import { useRequireWorkerSession } from "@/lib/session";
+import { useRequireSession } from "@/lib/session";
 import { formatCurrency, formatUiDate } from "@/lib/utils";
 
 type OrderResult = {
@@ -53,7 +53,7 @@ function DetailRow({
 }
 
 function SearchOrderPageContent() {
-  const { isChecking } = useRequireWorkerSession();
+  const { isChecking } = useRequireSession();
   const { t } = useTranslation();
   const statusLabel = useStatusLabel();
   const searchParams = useSearchParams();

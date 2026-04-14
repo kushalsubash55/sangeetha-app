@@ -7,6 +7,15 @@ create table profiles (
   created_at timestamptz not null default now()
 );
 
+create table users (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  phone text not null unique,
+  pin text not null,
+  role text not null check (role in ('owner', 'employee')),
+  created_at timestamptz not null default now()
+);
+
 create table orders (
   id uuid primary key default gen_random_uuid(),
   bill_number text not null unique,
