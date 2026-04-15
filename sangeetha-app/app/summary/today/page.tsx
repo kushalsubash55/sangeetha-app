@@ -66,16 +66,6 @@ type SummaryState = {
   openBillsCount: number;
 };
 
-type LifetimeSummaryState = {
-  totalCash: number;
-  totalUpi: number;
-  totalCollected: number;
-  totalBills: number;
-  totalDeliveredBills: number;
-  totalOpenBills: number;
-  totalPendingAmount: number;
-};
-
 type ActivityEntry = {
   billNumber: string;
   customerName: string;
@@ -104,16 +94,6 @@ const emptySummary: SummaryState = {
   totalCollected: 0,
   totalPendingAmount: 0,
   openBillsCount: 0,
-};
-
-const emptyLifetimeSummary: LifetimeSummaryState = {
-  totalCash: 0,
-  totalUpi: 0,
-  totalCollected: 0,
-  totalBills: 0,
-  totalDeliveredBills: 0,
-  totalOpenBills: 0,
-  totalPendingAmount: 0,
 };
 
 function StatCard({
@@ -358,39 +338,6 @@ export default function DashboardPage() {
       openBillsCount,
     };
   }, [deliveries, filterInfo, orders, payments]);
-
-  const lifetimeSummary = useMemo<LifetimeSummaryState>(() => {
-    const totalCash = payments
-      .filter((payment) => payment.payment_method === "cash")
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-
-    const totalUpi = payments
-      .filter((payment) => payment.payment_method === "upi")
-      .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
-
-    const totalPendingAmount = orders.reduce(
-      (sum, order) => sum + Number(order.amount_pending || 0),
-      0
-    );
-
-    const totalDeliveredBills = orders.filter(
-      (order) => order.status.trim().toUpperCase() === "DELIVERED"
-    ).length;
-
-    const totalOpenBills = orders.filter(
-      (order) => order.status.trim().toUpperCase() !== "DELIVERED"
-    ).length;
-
-    return {
-      totalCash,
-      totalUpi,
-      totalCollected: totalCash + totalUpi,
-      totalBills: orders.length,
-      totalDeliveredBills,
-      totalOpenBills,
-      totalPendingAmount,
-    };
-  }, [orders, payments]);
 
   const filteredPaymentsActivity = useMemo<ActivityEntry[]>(() => {
     return payments
@@ -683,34 +630,6 @@ export default function DashboardPage() {
               <div className="grid grid-cols-2 gap-3">
                 <StatCard title={t("common.pendingAmount")} value={formatCurrency(filteredSummary.totalPendingAmount)} />
                 <StatCard title={t("dashboard.openBills")} value={String(filteredSummary.openBillsCount)} />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-[22px] bg-white px-4 py-4 shadow-sm">
-              <p className="text-lg font-bold text-ink">{t("dashboard.lifetimeSummary")}</p>
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                <StatCard title={t("dashboard.totalCash")} value={formatCurrency(lifetimeSummary.totalCash)} />
-                <StatCard title={t("dashboard.totalUpi")} value={formatCurrency(lifetimeSummary.totalUpi)} />
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <StatCard
-                  title={t("dashboard.totalCollected")}
-                  value={formatCurrency(lifetimeSummary.totalCollected)}
-                />
-                <StatCard title={t("dashboard.totalBills")} value={String(lifetimeSummary.totalBills)} />
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <StatCard
-                  title={t("dashboard.deliveredBills")}
-                  value={String(lifetimeSummary.totalDeliveredBills)}
-                />
-                <StatCard title={t("dashboard.openBills")} value={String(lifetimeSummary.totalOpenBills)} />
-              </div>
-              <div className="mt-3">
-                <StatCard
-                  title={t("common.pendingAmount")}
-                  value={formatCurrency(lifetimeSummary.totalPendingAmount)}
-                />
               </div>
             </div>
 
