@@ -29,14 +29,11 @@ function formatPaymentMode(paymentMode: "cash" | "upi") {
 
 export async function POST(request: Request) {
   const telegramBotToken = process.env.TELEGRAM_BOT_TOKEN ?? "";
-  const telegramChatId =
-    process.env.TELEGRAM_GROUP_CHAT_ID ??
-    process.env.TELEGRAM_OWNER_CHAT_ID ??
-    "";
+  const telegramGroupChatId = process.env.TELEGRAM_GROUP_CHAT_ID ?? "";
 
-  if (!telegramBotToken || !telegramChatId) {
+  if (!telegramBotToken || !telegramGroupChatId) {
     return NextResponse.json(
-      { error: "Telegram bot token or chat id is missing." },
+      { error: "Telegram bot token or group chat id is missing." },
       { status: 500 }
     );
   }
@@ -71,7 +68,7 @@ export async function POST(request: Request) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        chat_id: telegramChatId,
+        chat_id: telegramGroupChatId,
         text: messageLines.join("\n"),
       }),
       cache: "no-store",
