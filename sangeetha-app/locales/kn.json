@@ -53,7 +53,8 @@
     "pendingValue": "ಪೆಂಡಿಂಗ್ {{amount}}",
     "pendingStatusValue": "ಪೆಂಡಿಂಗ್ {{amount}} • {{status}}",
     "byMode": "{{mode}} ಮೂಲಕ",
-    "dateTypeHint": "ಡೇಟ್ ಟೈಪ್ ಮಾಡಬಹುದು ಅಥವಾ ಕ್ಯಾಲೆಂಡರ್ ಯೂಸ್ ಮಾಡಬಹುದು."
+    "dateTypeHint": "ಡೇಟ್ ಟೈಪ್ ಮಾಡಬಹುದು ಅಥವಾ ಕ್ಯಾಲೆಂಡರ್ ಯೂಸ್ ಮಾಡಬಹುದು.",
+    "appUpdatedRefreshing": "ಆಪ್ ಅಪ್ಡೇಟ್ ಆಯ್ತು. ರಿಫ್ರೆಶ್ ಆಗುತ್ತಿದೆ..."
   },
   "login": {
     "title": "ಲಾಗಿನ್",

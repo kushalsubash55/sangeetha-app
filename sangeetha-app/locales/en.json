@@ -53,7 +53,8 @@
     "pendingValue": "Pending {{amount}}",
     "pendingStatusValue": "Pending {{amount}} • {{status}}",
     "byMode": "by {{mode}}",
-    "dateTypeHint": "You can type dates manually or use the calendar."
+    "dateTypeHint": "You can type dates manually or use the calendar.",
+    "appUpdatedRefreshing": "App updated. Refreshing..."
   },
   "login": {
     "title": "Login",
