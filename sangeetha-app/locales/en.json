@@ -138,7 +138,13 @@
     "fullPaymentHint": "Full payment will mark this bill as delivered automatically.",
     "alreadyDelivered": "This bill is already delivered.",
     "amountReceivedNow": "Amount Received Now",
-    "amountPlaceholder": "Enter amount"
+    "amountPlaceholder": "Enter amount",
+    "upiRecipient": "UPI Recipient",
+    "otherRecipient": "Other",
+    "selectUpiRecipient": "Select UPI recipient.",
+    "enterUpiRecipientName": "Enter UPI recipient name.",
+    "enterUpiRecipientNameLabel": "Enter UPI recipient name",
+    "enterUpiRecipientNamePlaceholder": "Type recipient name"
   },
   "pendingOrders": {
     "title": "Pending Orders",
@@ -187,7 +193,11 @@
     "fullyPaidDeliveredAction": "Fully Paid / Delivered",
     "billsStillOpen": "Bills Still Open",
     "openBillsTitle": "Open Bills",
-    "noOpenBills": "No open bills."
+    "noOpenBills": "No open bills.",
+    "upiDetails": "UPI Details",
+    "upiGrandTotal": "Grand Total UPI",
+    "unknownUpiRecipient": "Unknown",
+    "noUpiDetails": "No UPI payments found for this filter."
   },
   "billDetails": {
     "title": "Bill Details",

@@ -6,6 +6,7 @@ type NotificationBody = {
   amountReceivedNow: number;
   paymentMode: "cash" | "upi";
   pendingAmountAfterPayment: number;
+  upiRecipient?: string | null;
   employeeName: string;
   employeeId: string;
   timestamp: string;
@@ -53,6 +54,9 @@ export async function POST(request: Request) {
     `Customer: ${body.customerName}`,
     `Received: ${formatCurrency(Number(body.amountReceivedNow || 0))}`,
     `Mode: ${formatPaymentMode(body.paymentMode)}`,
+    ...(body.paymentMode === "upi" && body.upiRecipient
+      ? [`UPI To: ${body.upiRecipient}`]
+      : []),
     `Pending: ${formatCurrency(Number(body.pendingAmountAfterPayment || 0))}`,
     `Time: ${body.timestamp}`,
     "",

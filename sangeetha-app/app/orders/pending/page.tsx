@@ -2,15 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, ChevronDown, Clock3, ReceiptText, Search } from "lucide-react";
+import { AlertCircle, Clock3, ReceiptText, Search } from "lucide-react";
 import { BigButton } from "@/components/big-button";
 import { InputField } from "@/components/input-field";
 import { PageBrand } from "@/components/page-brand";
 import { useAutoScrollToMessage } from "@/lib/form-feedback";
-import { useStatusLabel, useTranslation } from "@/lib/i18n";
+import { useTranslation } from "@/lib/i18n";
 import { useRequireSession } from "@/lib/session";
 import { getSupabaseClient } from "@/lib/supabase";
-import { formatCurrency, formatUiDate } from "@/lib/utils";
 
 type PendingOrder = {
   id: string;
@@ -32,7 +31,7 @@ function SummaryCard({
 }) {
   return (
     <div className="rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm">
-      <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+      <p className="text-2xl font-bold text-ink">
         {label}
       </p>
       <p className="mt-2 text-3xl font-bold text-ink">{value}</p>
@@ -60,10 +59,8 @@ function DetailItem({
 export default function PendingOrdersPage() {
   const { isChecking } = useRequireSession();
   const { t } = useTranslation();
-  const statusLabel = useStatusLabel();
   const [allOrders, setAllOrders] = useState<PendingOrder[]>([]);
   const [billSearch, setBillSearch] = useState("");
-  const [openBills, setOpenBills] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const errorRef = useRef<HTMLDivElement>(null);
@@ -116,17 +113,6 @@ export default function PendingOrdersPage() {
     return allOrders.filter((order) => order.bill_number.includes(search));
   }, [allOrders, billSearch]);
 
-  const totalPendingAmount = useMemo(
-    () => allOrders.reduce((sum, order) => sum + Number(order.amount_pending || 0), 0),
-    [allOrders]
-  );
-
-  function toggleBillDetails(billNumber: string) {
-    setOpenBills((current) => ({
-      ...current,
-      [billNumber]: !current[billNumber],
-    }));
-  }
 
   if (isChecking) {
     return null;
@@ -143,9 +129,8 @@ export default function PendingOrdersPage() {
           </p>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-3">
+        <div className="mt-5 grid grid-cols-1 gap-3">
           <SummaryCard label={t("pendingOrders.pendingBills")} value={String(allOrders.length)} />
-          <SummaryCard label={t("common.pendingAmount")} value={formatCurrency(totalPendingAmount)} />
         </div>
 
         <div className="mt-5">
@@ -192,47 +177,14 @@ export default function PendingOrdersPage() {
                 key={order.id}
                 className="rounded-[24px] border border-sand bg-cream px-4 py-4 shadow-sm"
               >
-                <button
-                  type="button"
-                  onClick={() => toggleBillDetails(order.bill_number)}
-                  className="flex w-full items-center justify-between gap-3 rounded-2xl bg-white px-4 py-4 text-left shadow-sm"
-                >
+                <div className="flex w-full items-start gap-3 rounded-2xl bg-white px-4 py-4 text-left shadow-sm">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
+                    <p className="text-3xl font-bold text-brand">
                       {t("common.billWithNumber", { billNumber: order.bill_number })}
                     </p>
                     <p className="mt-2 text-xl font-bold text-ink">{order.customer_name}</p>
-                    <p className="mt-2 text-lg font-bold text-brand">
-                      {t("common.pendingValue", {
-                        amount: formatCurrency(Number(order.amount_pending || 0)),
-                      })}
-                    </p>
                   </div>
-                  <ChevronDown
-                    className={`h-6 w-6 shrink-0 text-brand transition ${
-                      openBills[order.bill_number] ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-
-                {openBills[order.bill_number] ? (
-                  <div className="mt-4 grid grid-cols-1 gap-3">
-                    <DetailItem label={t("common.receivedDate")} value={formatUiDate(order.received_date)} />
-                    <DetailItem
-                      label={t("common.totalAmount")}
-                      value={formatCurrency(Number(order.total_amount || 0))}
-                    />
-                    <DetailItem
-                      label={t("common.totalPaid")}
-                      value={formatCurrency(Number(order.amount_paid || 0))}
-                    />
-                    <DetailItem
-                      label={t("common.pendingAmount")}
-                      value={formatCurrency(Number(order.amount_pending || 0))}
-                    />
-                    <DetailItem label={t("common.currentStatus")} value={statusLabel(order.status)} />
-                  </div>
-                ) : null}
+                </div>
 
                 <div className="mt-4">
                   <Link href={`/delivery?bill=${order.bill_number}`}>

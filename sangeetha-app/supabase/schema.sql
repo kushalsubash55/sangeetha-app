@@ -39,6 +39,7 @@ create table payments (
   amount numeric(10,2) not null check (amount > 0),
   payment_method text not null check (payment_method in ('cash', 'upi')),
   payment_type text not null check (payment_type in ('advance', 'partial', 'full')),
+  upi_recipient text,
   recorded_by uuid references profiles(id),
   note text,
   created_at timestamptz not null default now()

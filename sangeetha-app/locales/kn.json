@@ -138,7 +138,13 @@
     "fullPaymentHint": "ಫುಲ್ ಪೇಮೆಂಟ್ ಆದ್ಮೇಲೆ ಈ ಬಿಲ್ ಆಟೋಮ್ಯಾಟಿಕ್ ಡೆಲಿವರ್ಡ್ ಆಗುತ್ತದೆ.",
     "alreadyDelivered": "ಈ ಬಿಲ್ ಈಗಾಗಲೇ ಡೆಲಿವರ್ಡ್ ಆಗಿದೆ.",
     "amountReceivedNow": "ಈಗ ರಿಸೀವ್ಡ್ ಅಮೌಂಟ್",
-    "amountPlaceholder": "ಅಮೌಂಟ್ ಎಂಟರ್ ಮಾಡಿ"
+    "amountPlaceholder": "ಅಮೌಂಟ್ ಎಂಟರ್ ಮಾಡಿ",
+    "upiRecipient": "ಯುಪಿಐ ರಿಸೀವರ್",
+    "otherRecipient": "ಅದರ್",
+    "selectUpiRecipient": "ಯುಪಿಐ ರಿಸೀವರ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ.",
+    "enterUpiRecipientName": "ಯುಪಿಐ ರಿಸೀವರ್ ಹೆಸರು ಎಂಟರ್ ಮಾಡಿ.",
+    "enterUpiRecipientNameLabel": "ಯುಪಿಐ ರಿಸೀವರ್ ಹೆಸರು ಎಂಟರ್ ಮಾಡಿ",
+    "enterUpiRecipientNamePlaceholder": "ರಿಸೀವರ್ ಹೆಸರು ಟೈಪ್ ಮಾಡಿ"
   },
   "pendingOrders": {
     "title": "ಪೆಂಡಿಂಗ್ ಆರ್ಡರ್‌ಗಳು",
@@ -187,7 +193,11 @@
     "fullyPaidDeliveredAction": "ಫುಲ್ಲಿ ಪೇಡ್ / ಡೆಲಿವರ್ಡ್",
     "billsStillOpen": "ಓಪನ್ ಬಿಲ್‌ಗಳು",
     "openBillsTitle": "ಓಪನ್ ಬಿಲ್‌ಗಳು",
-    "noOpenBills": "ಓಪನ್ ಬಿಲ್ ಇಲ್ಲ."
+    "noOpenBills": "ಓಪನ್ ಬಿಲ್ ಇಲ್ಲ.",
+    "upiDetails": "ಯುಪಿಐ ಡೀಟೇಲ್ಸ್",
+    "upiGrandTotal": "ಗ್ರ್ಯಾಂಡ್ ಟೋಟಲ್ ಯುಪಿಐ",
+    "unknownUpiRecipient": "ನಾಟ್ ಸೆಲೆಕ್ಟೆಡ್",
+    "noUpiDetails": "ಈ ಫಿಲ್ಟರ್‌ಗೆ ಯುಪಿಐ ಪೇಮೆಂಟ್ ಸಿಗಲಿಲ್ಲ."
   },
   "billDetails": {
     "title": "ಬಿಲ್ ಡೀಟೇಲ್ಸ್",

@@ -44,10 +44,25 @@ type PaymentRow = {
   created_at: string;
   order_id: string;
   recorded_by: string | null;
+  upi_recipient: string | null;
   orders: {
     bill_number: string;
     customer_name: string;
   } | null;
+};
+
+type UpiSplitPaymentItem = {
+  billNumber: string;
+  customerName: string;
+  amount: number;
+  time: string;
+};
+
+type UpiSplitItem = {
+  recipient: string;
+  total: number;
+  count: number;
+  payments: UpiSplitPaymentItem[];
 };
 
 type DeliveryRow = {
@@ -241,6 +256,8 @@ export default function DashboardPage() {
     delivered: false,
   });
   const [showOpenBills, setShowOpenBills] = useState(false);
+  const [showUpiDetails, setShowUpiDetails] = useState(false);
+  const [openUpiRecipients, setOpenUpiRecipients] = useState<Record<string, boolean>>({});
   const [selectedFilter, setSelectedFilter] = useState<FilterKey>("today");
   const [customFromDate, setCustomFromDate] = useState(formatDateOnly(new Date()));
   const [customToDate, setCustomToDate] = useState(formatDateOnly(new Date()));
@@ -266,7 +283,7 @@ export default function DashboardPage() {
           supabase
             .from("payments")
             .select(
-              "amount, payment_method, payment_type, payment_date, created_at, order_id, recorded_by, orders(bill_number, customer_name)"
+              "amount, payment_method, payment_type, payment_date, created_at, order_id, recorded_by, upi_recipient, orders(bill_number, customer_name)"
             )
             .returns<PaymentRow[]>(),
           supabase.from("deliveries").select("id, delivered_at, order_id").returns<DeliveryRow[]>(),
@@ -418,11 +435,65 @@ export default function DashboardPage() {
         status: order.status,
       }));
   }, [orders]);
+  const upiSplitItems = useMemo<UpiSplitItem[]>(() => {
+    const grouped = new Map<string, UpiSplitItem>();
+
+    payments
+      .filter((payment) => {
+        if (payment.payment_method !== "upi") {
+          return false;
+        }
+
+        const paymentTime = new Date(payment.payment_date || payment.created_at).getTime();
+        return paymentTime >= filterInfo.start.getTime() && paymentTime < filterInfo.end.getTime();
+      })
+      .forEach((payment) => {
+        const rawRecipient = payment.upi_recipient?.trim();
+        const recipient = rawRecipient || t("dashboard.unknownUpiRecipient");
+        const current = grouped.get(recipient) ?? {
+          recipient,
+          total: 0,
+          count: 0,
+          payments: [],
+        };
+
+        current.total += Number(payment.amount || 0);
+        current.count += 1;
+        current.payments.push({
+          billNumber: payment.orders?.bill_number ?? "-",
+          customerName: payment.orders?.customer_name ?? t("common.customerName"),
+          amount: Number(payment.amount || 0),
+          time: payment.payment_date || payment.created_at,
+        });
+        grouped.set(recipient, current);
+      });
+
+    return Array.from(grouped.values())
+      .map((item) => ({
+        ...item,
+        payments: item.payments.sort(
+          (a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()
+        ),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filterInfo, payments, t]);
+
+  const upiSplitTotal = useMemo(
+    () => upiSplitItems.reduce((sum, item) => sum + item.total, 0),
+    [upiSplitItems]
+  );
 
   function toggleActivitySection(section: keyof typeof openActivitySections) {
     setOpenActivitySections((current) => ({
       ...current,
       [section]: !current[section],
+    }));
+  }
+
+  function toggleUpiRecipient(recipient: string) {
+    setOpenUpiRecipients((current) => ({
+      ...current,
+      [recipient]: !current[recipient],
     }));
   }
 
@@ -477,7 +548,7 @@ export default function DashboardPage() {
                   href={`/summary/bill/${encodeURIComponent(item.billNumber)}`}
                   className="block rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm"
                 >
-                  <p className="text-base font-bold text-ink">
+                  <p className="text-xl font-bold text-ink">
                     {t("common.billWithNumber", { billNumber: item.billNumber })} | {item.customerName}
                   </p>
                   <p className="mt-1 text-sm font-semibold text-slate-700">
@@ -633,6 +704,101 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            <div className="mt-5 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowUpiDetails((current) => !current)}
+                className="flex w-full items-center justify-between rounded-2xl bg-white px-4 py-4 text-left shadow-sm"
+              >
+                <span className="flex items-center gap-3">
+                  <Wallet className="h-6 w-6 text-brand" />
+                  <span>
+                    <span className="block text-base font-bold text-ink">{t("dashboard.upiDetails")}</span>
+                    <span className="block text-sm font-semibold text-slate-600">
+                      {formatCurrency(upiSplitTotal)}
+                    </span>
+                  </span>
+                </span>
+                {showUpiDetails ? (
+                  <ChevronUp className="h-5 w-5 text-ink" />
+                ) : (
+                  <ChevronDown className="h-5 w-5 text-ink" />
+                )}
+              </button>
+
+              {showUpiDetails ? (
+                <div className="space-y-3 rounded-[22px] bg-white px-4 py-4 shadow-sm">
+                  <div className="rounded-2xl bg-cream px-4 py-4 text-center">
+                    <p className="text-base font-semibold text-ink">{t("dashboard.upiGrandTotal")}</p>
+                    <p className="mt-1 text-3xl font-bold text-brand">{formatCurrency(upiSplitTotal)}</p>
+                  </div>
+
+                  {upiSplitItems.length === 0 ? (
+                    <div className="rounded-2xl bg-cream px-4 py-4 text-center text-base font-semibold text-slate-600">
+                      {t("dashboard.noUpiDetails")}
+                    </div>
+                  ) : (
+                    upiSplitItems.map((item) => {
+                      const isOpen = openUpiRecipients[item.recipient] ?? false;
+
+                      return (
+                        <div
+                          key={item.recipient}
+                          className="rounded-2xl border border-sand bg-cream px-4 py-4"
+                        >
+                          <button
+                            type="button"
+                            onClick={() => toggleUpiRecipient(item.recipient)}
+                            className="flex w-full items-center justify-between gap-3 text-left"
+                          >
+                            <span>
+                              <span className="block text-xl font-bold text-ink">{item.recipient}</span>
+                              <span className="mt-2 block text-2xl font-bold text-brand">{formatCurrency(item.total)}</span>
+                              <span className="mt-1 block text-sm font-semibold text-slate-600">
+                                {t("common.billsCount", { count: item.count })}
+                              </span>
+                            </span>
+                            {isOpen ? (
+                              <ChevronUp className="h-5 w-5 text-ink" />
+                            ) : (
+                              <ChevronDown className="h-5 w-5 text-ink" />
+                            )}
+                          </button>
+
+                          {isOpen ? (
+                            <div className="mt-3 space-y-3">
+                              {item.payments.length === 0 ? (
+                                <div className="rounded-2xl bg-white px-4 py-4 text-center text-base font-semibold text-slate-600">
+                                  {t("dashboard.noUpiDetails")}
+                                </div>
+                              ) : (
+                                item.payments.map((payment, index) => (
+                                  <div
+                                    key={`${item.recipient}-${payment.billNumber}-${payment.time}-${index}`}
+                                    className="rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm"
+                                  >
+                                    <p className="text-lg font-bold text-ink">
+                                      {t("common.billWithNumber", { billNumber: payment.billNumber })} | {payment.customerName}
+                                    </p>
+                                    <p className="mt-1 text-base font-semibold text-brand">
+                                      {formatCurrency(payment.amount)}
+                                    </p>
+                                    <p className="mt-2 text-sm font-semibold text-slate-500">
+                                      {formatUiDateTime(payment.time)}
+                                    </p>
+                                  </div>
+                                ))
+                              )}
+                            </div>
+                          ) : null}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              ) : null}
+            </div>
+
             <div className="mt-5 rounded-[22px] bg-white px-4 py-4 shadow-sm">
               <p className="text-lg font-bold text-ink">{t("dashboard.recentActivity")}</p>
               <p className="mt-2 text-sm font-semibold text-slate-600">
@@ -703,7 +869,7 @@ export default function DashboardPage() {
                     key={bill.id}
                     className="rounded-2xl border border-sand bg-cream px-4 py-4"
                   >
-                    <p className="text-lg font-bold text-ink">{t("common.billWithNumber", { billNumber: bill.bill_number })}</p>
+                    <p className="text-2xl font-bold text-ink">{t("common.billWithNumber", { billNumber: bill.bill_number })}</p>
                     <p className="mt-1 text-base font-semibold text-slate-700">
                       {bill.customer_name}
                     </p>

@@ -1,3 +1,6 @@
+alter table public.payments
+add column if not exists upi_recipient text;
+
 create or replace function public.record_delivery_payment(
   p_bill_number text,
   p_amount_received numeric,

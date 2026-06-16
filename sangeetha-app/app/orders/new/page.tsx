@@ -293,7 +293,7 @@ export default function NewOrderPage() {
                 <p className="text-base font-semibold text-slate-500">
                   {t("newOrder.generatedBillLabel")}
                 </p>
-                <p className="text-2xl font-bold text-ink">
+                <p className="text-4xl font-bold text-brand">
                   {isLoadingBillNumber
                     ? t("newOrder.loadingBillNumber")
                     : nextBillNumber || "--"}

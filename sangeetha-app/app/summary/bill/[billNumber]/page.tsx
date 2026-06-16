@@ -28,16 +28,18 @@ type PaymentRow = {
 function DetailRow({
   label,
   value,
+  valueClassName,
 }: {
   label: string;
   value: string;
+  valueClassName?: string;
 }) {
   return (
     <div className="rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm">
       <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
         {label}
       </p>
-      <p className="mt-2 text-xl font-bold text-ink">{value}</p>
+      <p className={valueClassName ?? "mt-2 text-xl font-bold text-ink"}>{value}</p>
     </div>
   );
 }
@@ -141,12 +143,12 @@ export default function SummaryBillDetailsPage() {
           <div className="mt-5 space-y-3">
             <div className="rounded-[22px] bg-cream px-4 py-4 text-center">
               <p className="text-base font-semibold text-ink">{t("billDetails.billFound")}</p>
-              <p className="mt-1 text-2xl font-bold text-brand">
+              <p className="mt-1 text-3xl font-bold text-brand">
                 {t("common.billWithNumber", { billNumber: order.bill_number })}
               </p>
             </div>
 
-            <DetailRow label={t("common.billNumber")} value={order.bill_number} />
+            <DetailRow label={t("common.billNumber")} value={order.bill_number} valueClassName="mt-2 text-3xl font-bold text-brand" />
             <DetailRow label={t("common.customerName")} value={order.customer_name} />
             <DetailRow label={t("common.receivedDate")} value={formatUiDate(order.received_date)} />
             <DetailRow label={t("common.totalAmount")} value={formatCurrency(order.total_amount)} />

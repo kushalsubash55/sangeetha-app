@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, Suspense, useEffect, useRef, useState } from "react";
+import { FormEvent, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSearchParams } from "next/navigation";
@@ -22,6 +22,18 @@ import { getSupabaseClient } from "@/lib/supabase";
 import { formatCurrency, formatUiDateTime } from "@/lib/utils";
 
 type PaymentMode = "cash" | "upi";
+
+const UPI_RECIPIENT_OPTIONS = [
+  "Subash",
+  "Nani",
+  "Srikanth",
+  "Thyagraj",
+  "Anju",
+  "Bharathi",
+  "Other",
+] as const;
+
+type UpiRecipientOption = (typeof UPI_RECIPIENT_OPTIONS)[number];
 
 type OrderResult = {
   id: string;
@@ -48,16 +60,18 @@ type DeliveryPaymentResult = {
 function DetailRow({
   label,
   value,
+  valueClassName,
 }: {
   label: string;
   value: string;
+  valueClassName?: string;
 }) {
   return (
     <div className="rounded-2xl border border-sand bg-white px-4 py-4 shadow-sm">
       <p className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-500">
         {label}
       </p>
-      <p className="mt-2 text-xl font-bold text-ink">{value}</p>
+      <p className={valueClassName ?? "mt-2 text-xl font-bold text-ink"}>{value}</p>
     </div>
   );
 }
@@ -84,6 +98,8 @@ function DeliveryPageContent() {
   const [totalPaid, setTotalPaid] = useState(0);
   const [amountReceivedNow, setAmountReceivedNow] = useState("");
   const [paymentMode, setPaymentMode] = useState<PaymentMode>("cash");
+  const [upiRecipientOption, setUpiRecipientOption] = useState<UpiRecipientOption | "">("");
+  const [otherUpiRecipient, setOtherUpiRecipient] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -92,9 +108,24 @@ function DeliveryPageContent() {
   const [notFoundMessage, setNotFoundMessage] = useState("");
   const billNumberRef = useRef<HTMLInputElement>(null);
   const amountRef = useRef<HTMLInputElement>(null);
+  const upiRecipientRef = useRef<HTMLInputElement>(null);
+  const otherUpiRecipientRef = useRef<HTMLInputElement>(null);
   const messageRef = useRef<HTMLDivElement>(null);
   const activeMessage = errorMessage || notFoundMessage || warningMessage;
   const delivered = isDeliveredOrder(order);
+  const requiresUpiRecipient = paymentMode === "upi";
+  const resolvedUpiRecipient = useMemo(() => {
+    if (!requiresUpiRecipient || !upiRecipientOption) {
+      return "";
+    }
+
+    if (upiRecipientOption === "Other") {
+      return otherUpiRecipient.trim();
+    }
+
+    return upiRecipientOption;
+  }, [otherUpiRecipient, requiresUpiRecipient, upiRecipientOption]);
+  const isUpiRecipientMissing = requiresUpiRecipient && !resolvedUpiRecipient;
 
   useAutoScrollToMessage(activeMessage, messageRef);
 
@@ -151,6 +182,8 @@ function DeliveryPageContent() {
       setTotalPaid(paid);
       setAmountReceivedNow("");
       setPaymentMode("cash");
+      setUpiRecipientOption("");
+      setOtherUpiRecipient("");
     } catch (error) {
       console.error("Delivery page load failed", error);
       setErrorMessage(
@@ -205,6 +238,18 @@ function DeliveryPageContent() {
       return;
     }
 
+    if (paymentMode === "upi" && !upiRecipientOption) {
+      setErrorMessage(t("delivery.selectUpiRecipient"));
+      focusFieldAfterError(upiRecipientRef);
+      return;
+    }
+
+    if (paymentMode === "upi" && upiRecipientOption === "Other" && !otherUpiRecipient.trim()) {
+      setErrorMessage(t("delivery.enterUpiRecipientName"));
+      focusFieldAfterError(otherUpiRecipientRef);
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -213,6 +258,7 @@ function DeliveryPageContent() {
         p_bill_number: order.bill_number,
         p_amount_received: receivedNow,
         p_payment_method: paymentMode,
+        p_upi_recipient: paymentMode === "upi" ? resolvedUpiRecipient : null,
       });
 
       if (error) {
@@ -239,6 +285,8 @@ function DeliveryPageContent() {
       setOrder(refreshedOrder);
       setTotalPaid(Number(paymentResult.total_paid));
       setAmountReceivedNow("");
+      setUpiRecipientOption("");
+      setOtherUpiRecipient("");
 
       try {
         const notificationResponse = await fetch("/api/telegram-owner-notification", {
@@ -251,6 +299,7 @@ function DeliveryPageContent() {
             customerName: order.customer_name,
             amountReceivedNow: receivedNow,
             paymentMode,
+            upiRecipient: paymentMode === "upi" ? resolvedUpiRecipient : null,
             pendingAmountAfterPayment: Number(paymentResult.amount_pending),
             employeeName: session?.fullName || t("common.unknownWorker"),
             employeeId: session?.phone || t("common.notSet"),
@@ -369,7 +418,7 @@ function DeliveryPageContent() {
               </p>
             </div>
 
-            <DetailRow label={t("common.billNumber")} value={order.bill_number} />
+            <DetailRow label={t("common.billNumber")} value={order.bill_number} valueClassName="mt-2 text-3xl font-bold text-brand" />
             <DetailRow label={t("common.customerName")} value={order.customer_name} />
             <DetailRow label={t("common.totalAmount")} value={formatCurrency(order.total_amount)} />
             <DetailRow label={t("common.advancePaid")} value={formatCurrency(order.amount_paid)} />
@@ -410,7 +459,13 @@ function DeliveryPageContent() {
                         <button
                           key={option.value}
                           type="button"
-                          onClick={() => setPaymentMode(option.value as PaymentMode)}
+                          onClick={() => {
+                            setPaymentMode(option.value as PaymentMode);
+                            if (option.value === "cash") {
+                              setUpiRecipientOption("");
+                              setOtherUpiRecipient("");
+                            }
+                          }}
                           className={`rounded-2xl border px-3 py-4 text-lg font-bold transition ${
                             active
                               ? "border-brand bg-brand text-white shadow-md"
@@ -424,7 +479,55 @@ function DeliveryPageContent() {
                   </div>
                 </div>
 
-                <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
+                {paymentMode === "upi" ? (
+                  <div className="space-y-4 rounded-2xl border border-sand bg-cream px-4 py-4">
+                    <div>
+                      <p className="mb-2 text-lg font-semibold text-ink">{t("delivery.upiRecipient")}</p>
+                      <div className="grid grid-cols-2 gap-3">
+                        {UPI_RECIPIENT_OPTIONS.map((option) => {
+                          const active = upiRecipientOption === option;
+
+                          return (
+                            <button
+                              key={option}
+                              type="button"
+                              onClick={() => setUpiRecipientOption(option)}
+                              className={`rounded-2xl border px-3 py-3 text-base font-bold transition ${
+                                active
+                                  ? "border-brand bg-brand text-white shadow-md"
+                                  : "border-sand bg-white text-ink"
+                              }`}
+                            >
+                              {option === "Other" ? t("delivery.otherRecipient") : option}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {upiRecipientOption === "Other" ? (
+                      <InputField
+                        ref={otherUpiRecipientRef}
+                        label={t("delivery.enterUpiRecipientNameLabel")}
+                        name="otherUpiRecipient"
+                        placeholder={t("delivery.enterUpiRecipientNamePlaceholder")}
+                        value={otherUpiRecipient}
+                        onChange={(event) => setOtherUpiRecipient(event.target.value)}
+                        icon={<Wallet className="h-6 w-6" />}
+                      />
+                    ) : null}
+
+                    {isUpiRecipientMissing ? (
+                      <input ref={upiRecipientRef} className="sr-only" readOnly value="" aria-hidden="true" tabIndex={-1} />
+                    ) : null}
+                  </div>
+                ) : null}
+
+                <BigButton
+                  type="submit"
+                  disabled={isSaving || isUpiRecipientMissing}
+                  className={isSaving || isUpiRecipientMissing ? "opacity-70" : ""}
+                >
                   <Truck className="h-6 w-6" />
                   {isSaving ? t("common.saving") : t("common.savePayment")}
                 </BigButton>
