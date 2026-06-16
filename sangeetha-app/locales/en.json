@@ -105,7 +105,13 @@
     "couldNotSaveOrder": "Could not save order.",
     "orderSavedPaymentMissing": "Order saved, but payment was not saved.",
     "orderSaved": "Order saved. Bill {{billNumber}}. Pending {{pending}}.",
-    "saveFailed": "Something went wrong. Try again."
+    "saveFailed": "Something went wrong. Try again.",
+    "selectUpiRecipient": "Select UPI recipient.",
+    "enterUpiRecipientName": "Enter UPI recipient name.",
+    "upiRecipient": "UPI Recipient",
+    "otherRecipient": "Other",
+    "enterUpiRecipientNameLabel": "Enter UPI recipient name",
+    "enterUpiRecipientNamePlaceholder": "Type recipient name"
   },
   "searchBill": {
     "title": "Search Bill",

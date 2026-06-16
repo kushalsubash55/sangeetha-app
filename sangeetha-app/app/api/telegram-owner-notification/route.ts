@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-type NotificationBody = {
+type PaymentNotificationBody = {
+  notificationType?: "payment";
   billNumber: string;
   customerName: string;
   amountReceivedNow: number;
@@ -11,6 +12,21 @@ type NotificationBody = {
   employeeId: string;
   timestamp: string;
 };
+
+type NewOrderNotificationBody = {
+  notificationType: "new-order";
+  billNumber: string;
+  customerName: string;
+  totalAmount: number;
+  advancePaid: number;
+  paymentMode: "cash" | "upi" | "none";
+  upiRecipient?: string | null;
+  employeeName: string;
+  employeeId: string;
+  timestamp: string;
+};
+
+type NotificationBody = PaymentNotificationBody | NewOrderNotificationBody;
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("en-IN", {
@@ -47,22 +63,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid notification payload." }, { status: 400 });
   }
 
-  const messageLines = [
-    "Payment Received",
-    "",
-    `Bill: ${body.billNumber}`,
-    `Customer: ${body.customerName}`,
-    `Received: ${formatCurrency(Number(body.amountReceivedNow || 0))}`,
-    `Mode: ${formatPaymentMode(body.paymentMode)}`,
-    ...(body.paymentMode === "upi" && body.upiRecipient
-      ? [`UPI To: ${body.upiRecipient}`]
-      : []),
-    `Pending: ${formatCurrency(Number(body.pendingAmountAfterPayment || 0))}`,
-    `Time: ${body.timestamp}`,
-    "",
-    `Employee: ${body.employeeName}`,
-    `Employee ID: ${body.employeeId}`,
-  ];
+  const isNewOrderNotification = body.notificationType === "new-order";
+
+  const messageLines = isNewOrderNotification
+    ? (() => {
+        const newOrderBody = body as NewOrderNotificationBody;
+
+        return [
+          "New Order Created",
+          "",
+          `Bill: ${newOrderBody.billNumber}`,
+          `Customer: ${newOrderBody.customerName}`,
+          `Total: ${formatCurrency(Number(newOrderBody.totalAmount || 0))}`,
+          `Advance: ${formatCurrency(Number(newOrderBody.advancePaid || 0))}`,
+          ...(newOrderBody.paymentMode !== "none"
+            ? [`Mode: ${formatPaymentMode(newOrderBody.paymentMode as "cash" | "upi")}`]
+            : []),
+          ...(newOrderBody.paymentMode === "upi" && newOrderBody.upiRecipient
+            ? [`UPI To: ${newOrderBody.upiRecipient}`]
+            : []),
+          `Date: ${newOrderBody.timestamp}`,
+          "",
+          `Employee: ${newOrderBody.employeeName}`,
+          `Employee ID: ${newOrderBody.employeeId}`,
+        ];
+      })()
+    : (() => {
+        const paymentBody = body as PaymentNotificationBody;
+
+        return [
+          "Payment Received",
+          "",
+          `Bill: ${paymentBody.billNumber}`,
+          `Customer: ${paymentBody.customerName}`,
+          `Received: ${formatCurrency(Number(paymentBody.amountReceivedNow || 0))}`,
+          `Mode: ${formatPaymentMode(paymentBody.paymentMode)}`,
+          ...(paymentBody.paymentMode === "upi" && paymentBody.upiRecipient
+            ? [`UPI To: ${paymentBody.upiRecipient}`]
+            : []),
+          `Pending: ${formatCurrency(Number(paymentBody.pendingAmountAfterPayment || 0))}`,
+          `Time: ${paymentBody.timestamp}`,
+          "",
+          `Employee: ${paymentBody.employeeName}`,
+          `Employee ID: ${paymentBody.employeeId}`,
+        ];
+      })();
 
   const telegramResponse = await fetch(
     `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,

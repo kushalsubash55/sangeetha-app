@@ -18,10 +18,22 @@ import { PageBrand } from "@/components/page-brand";
 import { focusFieldAfterError, useAutoScrollToMessage } from "@/lib/form-feedback";
 import { usePaymentModeLabel, useTranslation } from "@/lib/i18n";
 import { getSupabaseClient } from "@/lib/supabase";
-import { formatCurrency, todayDate } from "@/lib/utils";
+import { formatCurrency, formatUiDateTime, todayDate } from "@/lib/utils";
 import { useRequireSession } from "@/lib/session";
 
 type PaymentMode = "cash" | "upi" | "none";
+
+const UPI_RECIPIENT_OPTIONS = [
+  "Subash",
+  "Nani",
+  "Srikanth",
+  "Thyagraj",
+  "Anju",
+  "Bharathi",
+  "Other",
+] as const;
+
+type UpiRecipientOption = (typeof UPI_RECIPIENT_OPTIONS)[number];
 
 type SavedOrderResult = {
   id: string;
@@ -51,7 +63,7 @@ const initialForm: FormState = {
 };
 
 export default function NewOrderPage() {
-  const { isChecking } = useRequireSession();
+  const { isChecking, session } = useRequireSession();
   const { t } = useTranslation();
   const paymentModeLabel = usePaymentModeLabel();
   const [form, setForm] = useState<FormState>(initialForm);
@@ -60,10 +72,14 @@ export default function NewOrderPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successDialog, setSuccessDialog] = useState<SuccessDialogState>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [upiRecipientOption, setUpiRecipientOption] = useState<UpiRecipientOption | "">("");
+  const [otherUpiRecipient, setOtherUpiRecipient] = useState("");
   const customerNameRef = useRef<HTMLInputElement>(null);
   const receivedDateRef = useRef<HTMLInputElement>(null);
   const totalAmountRef = useRef<HTMLInputElement>(null);
   const advancePaidRef = useRef<HTMLInputElement>(null);
+  const upiRecipientRef = useRef<HTMLInputElement>(null);
+  const otherUpiRecipientRef = useRef<HTMLInputElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
 
   useAutoScrollToMessage(errorMessage, errorRef);
@@ -118,9 +134,32 @@ export default function NewOrderPage() {
 
     return formatCurrency(pending);
   }, [form.advancePaid, form.totalAmount]);
+  const requiresUpiRecipient = form.paymentMode === "upi" && Number(form.advancePaid || 0) > 0;
+  const resolvedUpiRecipient = useMemo(() => {
+    if (!requiresUpiRecipient || !upiRecipientOption) {
+      return "";
+    }
+
+    if (upiRecipientOption === "Other") {
+      return otherUpiRecipient.trim();
+    }
+
+    return upiRecipientOption;
+  }, [otherUpiRecipient, requiresUpiRecipient, upiRecipientOption]);
+  const isUpiRecipientMissing = requiresUpiRecipient && !resolvedUpiRecipient;
 
   function updateField<K extends keyof FormState>(key: K, value: FormState[K]) {
     setForm((current) => ({ ...current, [key]: value }));
+
+    if (key === "paymentMode" && value !== "upi") {
+      setUpiRecipientOption("");
+      setOtherUpiRecipient("");
+    }
+
+    if (key === "advancePaid" && Number(value || 0) <= 0) {
+      setUpiRecipientOption("");
+      setOtherUpiRecipient("");
+    }
   }
 
   function showError(
@@ -179,6 +218,16 @@ export default function NewOrderPage() {
       return;
     }
 
+    if (requiresUpiRecipient && !upiRecipientOption) {
+      showError(t("newOrder.selectUpiRecipient"), upiRecipientRef);
+      return;
+    }
+
+    if (requiresUpiRecipient && upiRecipientOption === "Other" && !otherUpiRecipient.trim()) {
+      showError(t("newOrder.enterUpiRecipientName"), otherUpiRecipientRef);
+      return;
+    }
+
     setIsSaving(true);
 
     try {
@@ -217,6 +266,7 @@ export default function NewOrderPage() {
           amount: advancePaid,
           payment_method: form.paymentMode,
           payment_type: advancePaid === totalAmount ? "full" : "advance",
+          upi_recipient: form.paymentMode === "upi" ? resolvedUpiRecipient : null,
           note: "Advance payment saved with new order",
         });
 
@@ -234,9 +284,37 @@ export default function NewOrderPage() {
           bill_number: savedOrder.bill_number,
           advance_paid: advancePaid,
           payment_mode: form.paymentMode,
+          upi_recipient: form.paymentMode === "upi" ? resolvedUpiRecipient : null,
           status: "RECEIVED",
         },
       });
+
+      try {
+        const notificationResponse = await fetch("/api/telegram-owner-notification", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            notificationType: "new-order",
+            billNumber: savedOrder.bill_number,
+            customerName: form.customerName.trim(),
+            totalAmount,
+            advancePaid,
+            paymentMode: form.paymentMode,
+            upiRecipient: form.paymentMode === "upi" ? resolvedUpiRecipient : null,
+            employeeName: session?.fullName || t("common.unknownWorker"),
+            employeeId: session?.phone || t("common.notSet"),
+            timestamp: formatUiDateTime(new Date()),
+          }),
+        });
+
+        if (!notificationResponse.ok) {
+          console.error("New order Telegram notification failed");
+        }
+      } catch (error) {
+        console.error("New order Telegram notification failed", error);
+      }
 
       setSuccessDialog({
         billNumber: savedOrder.bill_number,
@@ -246,6 +324,8 @@ export default function NewOrderPage() {
         ...initialForm,
         receivedDate: todayDate(),
       });
+      setUpiRecipientOption("");
+      setOtherUpiRecipient("");
       setNextBillNumber(String(Number(savedOrder.bill_number) + 1));
     } catch (error) {
       console.error("New order save failed", error);
@@ -381,6 +461,50 @@ export default function NewOrderPage() {
             </div>
           </div>
 
+          {requiresUpiRecipient ? (
+            <div className="space-y-4 rounded-2xl border border-sand bg-cream px-4 py-4">
+              <div>
+                <p className="mb-2 text-lg font-semibold text-ink">{t("newOrder.upiRecipient")}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {UPI_RECIPIENT_OPTIONS.map((option) => {
+                    const active = upiRecipientOption === option;
+
+                    return (
+                      <button
+                        key={option}
+                        type="button"
+                        onClick={() => setUpiRecipientOption(option)}
+                        className={`rounded-2xl border px-3 py-3 text-base font-bold transition ${
+                          active
+                            ? "border-brand bg-brand text-white shadow-md"
+                            : "border-sand bg-white text-ink"
+                        }`}
+                      >
+                        {option === "Other" ? t("newOrder.otherRecipient") : option}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {upiRecipientOption === "Other" ? (
+                <InputField
+                  ref={otherUpiRecipientRef}
+                  label={t("newOrder.enterUpiRecipientNameLabel")}
+                  name="otherUpiRecipient"
+                  placeholder={t("newOrder.enterUpiRecipientNamePlaceholder")}
+                  value={otherUpiRecipient}
+                  onChange={(event) => setOtherUpiRecipient(event.target.value)}
+                  icon={<Wallet className="h-6 w-6" />}
+                />
+              ) : null}
+
+              {isUpiRecipientMissing ? (
+                <input ref={upiRecipientRef} className="sr-only" readOnly value="" aria-hidden="true" tabIndex={-1} />
+              ) : null}
+            </div>
+          ) : null}
+
           {errorMessage ? (
             <div
               ref={errorRef}
@@ -390,7 +514,7 @@ export default function NewOrderPage() {
             </div>
           ) : null}
 
-          <BigButton type="submit" disabled={isSaving} className={isSaving ? "opacity-70" : ""}>
+          <BigButton type="submit" disabled={isSaving || isUpiRecipientMissing} className={isSaving || isUpiRecipientMissing ? "opacity-70" : ""}>
             <Save className="h-6 w-6" />
             {isSaving ? t("common.saving") : t("common.saveOrder")}
           </BigButton>

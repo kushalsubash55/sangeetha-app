@@ -105,7 +105,13 @@
     "couldNotSaveOrder": "ಆರ್ಡರ್ ಸೇವ್ ಆಗಲಿಲ್ಲ.",
     "orderSavedPaymentMissing": "ಆರ್ಡರ್ ಸೇವ್ ಆಯ್ತು, ಪೇಮೆಂಟ್ ಸೇವ್ ಆಗಲಿಲ್ಲ.",
     "orderSaved": "ಆರ್ಡರ್ ಸೇವ್ ಆಯ್ತು. ಬಿಲ್ {{billNumber}}. ಪೆಂಡಿಂಗ್ {{pending}}.",
-    "saveFailed": "ಸಮಸ್ಯೆ ಆಯ್ತು. ಮತ್ತೆ ಟ್ರೈ ಮಾಡಿ."
+    "saveFailed": "ಸಮಸ್ಯೆ ಆಯ್ತು. ಮತ್ತೆ ಟ್ರೈ ಮಾಡಿ.",
+    "selectUpiRecipient": "ಯುಪಿಐ ರಿಸೀವರ್ ಸೆಲೆಕ್ಟ್ ಮಾಡಿ.",
+    "enterUpiRecipientName": "ಯುಪಿಐ ರಿಸೀವರ್ ಹೆಸರು ಎಂಟರ್ ಮಾಡಿ.",
+    "upiRecipient": "ಯುಪಿಐ ರಿಸೀವರ್",
+    "otherRecipient": "ಅದರ್",
+    "enterUpiRecipientNameLabel": "ಯುಪಿಐ ರಿಸೀವರ್ ಹೆಸರು ಎಂಟರ್ ಮಾಡಿ",
+    "enterUpiRecipientNamePlaceholder": "ರಿಸೀವರ್ ಹೆಸರು ಟೈಪ್ ಮಾಡಿ"
   },
   "searchBill": {
     "title": "ಬಿಲ್ ಹುಡುಕಿ",
